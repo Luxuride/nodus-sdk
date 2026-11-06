@@ -144,6 +144,18 @@ second trait rather than one trait with two base URLs: `SdkError::Discovery` and
 `SdkError::Instance` are distinct types, so `is_discovery_only()` can keep the
 layout rendering while only the Feed tab degrades.
 
+## The discovery transport
+
+`nodus-discovery` is the concrete client, in its own crate because `crates/sdk`
+must stay free of `reqwest` and `gloo-net` while this transport needs one of them.
+`nodus_discovery::DiscoveryClient` is the native (`reqwest`) implementation and
+`nodus_discovery::BrowserDiscovery` the browser (`gloo-net` + `web-sys`) one; both
+implement `Discovery` and map a `426` to their own `ClientTooOld`, so the web crate
+constructs `Sdk<BrowserInstance, BrowserDiscovery, …>` and the native harness
+constructs `Sdk<HttpInstance, DiscoveryClient, …>`. The SDK never names either
+type: it sees only the trait, and a transport's `ClientTooOld` reaches the UI as
+`SdkError::Discovery(..)`, which is still discovery-only.
+
 ## `Persistence`
 
 ```rust

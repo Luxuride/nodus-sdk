@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/shared", "crates/instance", "crates/sdk"]
+members = ["crates/shared", "crates/instance", "crates/sdk", "crates/discovery"]
 
 [workspace.package]
 version = "0.1.0"
@@ -13,6 +13,8 @@ repository = "https://github.com/luxuride/nodus-sdk"
 [workspace.dependencies]
 nodus-shared = { path = "crates/shared", version = "0.1.0" }
 nodus-instance = { path = "crates/instance", version = "0.1.0" }
+nodus-discovery = { path = "crates/discovery", version = "0.1.0" }
+nodus-sdk = { path = "crates/sdk", version = "0.1.0" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

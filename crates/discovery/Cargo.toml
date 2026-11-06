@@ -1,0 +1,33 @@
+[package]
+name = "nodus-discovery"
+description = "Typed client for the Nodus recommendation API, for native Rust and the browser"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+nodus-sdk = { workspace = true }
+nodus-shared = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "webpki-roots"], optional = true }
+gloo-net = { version = "0.6", default-features = false, features = ["http"], optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+web-sys = { version = "0.3", optional = true, features = [
+    "Url",
+    "UrlSearchParams",
+] }
+
+[features]
+# The `reqwest` transport, for native Rust and the calculator.
+native = ["dep:reqwest"]
+# The browser transport, for the web client; only built for `wasm32`.
+wasm = ["dep:gloo-net", "dep:web-sys", "dep:wasm-bindgen"]
+
+[lints]
+workspace = true
