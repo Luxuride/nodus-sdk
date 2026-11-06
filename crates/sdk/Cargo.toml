@@ -1,0 +1,19 @@
+[package]
+name = "mastodon-reccom-sdk"
+description = "Client-side Mastodon state store: the source of truth the web client renders"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+mastodon-reccom-shared = { workspace = true }
+mastodon-reccom-mastodon = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
