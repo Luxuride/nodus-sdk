@@ -8,7 +8,7 @@
 //! build variant of the native one — it is the one the web client runs on, and
 //! `native` exists for the parts of the product that have no browser: the
 //! background calculator and the integration tests. Both are driven by the same
-//! two traits in [`crate::api`], so an endpoint spelling, an error mapping or a
+//! two traits in [`nodus_instance_api::api`], so an endpoint spelling, an error mapping or a
 //! pagination rule cannot drift between them.
 //!
 //! Enabled by the `wasm` feature, and only compiled for `wasm32`; see
@@ -25,12 +25,12 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{BinaryType, MessageEvent, WebSocket};
 
-use crate::api::{InstanceApi, Streaming};
-use crate::model::{
+use nodus_instance_api::api::{InstanceApi, Streaming};
+use nodus_instance_api::model::{
     Account, Context, Draft, LocalId, Notification, Page, PageParams, Relationship, Status,
     StreamKind,
 };
-use crate::{Error, Instance, Result};
+use nodus_instance_api::{Error, Instance, Result};
 
 /// Seconds to wait when an instance rate-limits us without saying for how long.
 ///
@@ -536,7 +536,7 @@ impl BrowserInstance {
 #[cfg(test)]
 mod tests {
     use super::{MAX_ERROR_BODY, error_message, status_error};
-    use crate::Error;
+    use nodus_instance_api::Error;
 
     #[test]
     fn a_401_stops_sync() {

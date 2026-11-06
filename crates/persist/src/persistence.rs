@@ -7,8 +7,9 @@
 
 use core::future::Future;
 
+use nodus_state::Timeline;
+
 use crate::error::PersistenceError;
-use crate::state::Timeline;
 
 /// A cache slot. Keys are coarse on purpose: one entry per host per kind, so the
 /// adapter can evict a whole class (all statuses on a host) without scanning.

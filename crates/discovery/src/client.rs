@@ -8,11 +8,11 @@
 use core::fmt;
 use std::time::Duration;
 
-use nodus_sdk::Discovery;
 use nodus_shared::{
     AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta,
     SyncTokenRequest,
 };
+use nodus_state::Discovery;
 use reqwest::header::{HeaderMap, RETRY_AFTER};
 use reqwest::{Client, Method, RequestBuilder, Response, StatusCode};
 use serde::Deserialize;

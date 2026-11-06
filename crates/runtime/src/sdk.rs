@@ -1,16 +1,15 @@
 //! The SDK itself: one generic state machine over four ports.
 
-use nodus_instance::{InstanceApi, PageParams, StreamKind};
+use nodus_instance_api::{InstanceApi, PageParams, StreamKind};
+use nodus_persist::{CacheKey, Persistence};
 use nodus_shared::{AccountFeed, EventBatch};
+use nodus_state::{
+    AppState, Command, Discovery, FeedState, Session, StreamState, Timeline, TimelinePage,
+    TimelineRequest,
+};
 
 use crate::clock::Clock;
-use crate::command::Command;
-use crate::discovery::Discovery;
 use crate::error::SdkError;
-use crate::persistence::{CacheKey, Persistence};
-use crate::state::{
-    AppState, FeedState, Session, StreamState, Timeline, TimelinePage, TimelineRequest,
-};
 
 /// Client-side state machine.
 ///

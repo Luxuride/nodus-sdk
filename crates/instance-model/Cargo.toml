@@ -1,0 +1,18 @@
+[package]
+name = "nodus-instance-model"
+description = "Mastodon domain model: the data shapes every instance transport speaks, with no I/O"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

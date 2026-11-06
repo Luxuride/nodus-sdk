@@ -9,11 +9,11 @@
 use core::fmt;
 
 use gloo_net::http::{Headers, Request, RequestBuilder, Response};
-use nodus_sdk::Discovery;
 use nodus_shared::{
     AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta,
     SyncTokenRequest,
 };
+use nodus_state::Discovery;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use url::Url;

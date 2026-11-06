@@ -9,7 +9,10 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-nodus-sdk = { workspace = true }
+# The trait lives in `nodus-state` (the sink of the dependency arrows): `state`
+# owns `Discovery`, this crate implements it, and `nodus-sdk` re-exports both.
+# Depending on the facade here would close that triangle into a cycle.
+nodus-state = { workspace = true }
 nodus-shared = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

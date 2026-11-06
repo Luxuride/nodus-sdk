@@ -1,40 +1,28 @@
-//! Typed Mastodon API client shared by the background sync worker (native) and
-//! the Leptos client (`wasm32`).
+//! The instance surface, as traits, plus the errors and instance helpers both
+//! transports share.
 //!
-//! One crate, one endpoint surface, two transports selected by feature flag
-//! (`native` → `reqwest`, `wasm` → `gloo-net` + `web-sys`). Keeping the
-//! endpoint definitions in one place is the point: the worker and the browser
-//! cannot drift on pagination, error mapping or rate-limit headers.
-//!
-//! See `docs/03-contract.md` for why this crate lives in the
-//! SDK repository rather than in either consumer.
+//! One crate, one endpoint surface, two transports selected elsewhere
+//! (`nodus-instance-rest` with `native` → `reqwest`, `wasm` → `gloo-net`). The
+//! traits live here rather than beside either transport so a consumer can be
+//! generic over the surface without compiling an HTTP stack: the SDK state
+//! machine does exactly that.
 //!
 //! Layout:
 //!
-//! * [`model`] — the instance's data shapes ([`Status`], [`Account`], …);
+//! * [`model`] — the instance's data shapes ([`Status`], [`Account`], …),
+//!   re-exported from `nodus-instance-model`;
 //! * [`api::InstanceApi`] — what a signed-in person can do, as a trait;
 //! * [`sync_api::SyncApi`] — the read-only crawl surface (`following`,
 //!   `favourites`, `bookmarks`), deliberately without any write method;
 //! * this module — errors and instance/app registration helpers.
 
 pub mod api;
-pub mod model;
-#[cfg(feature = "native")]
-pub mod native;
+pub use nodus_instance_model as model;
 pub mod sync_api;
-#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
-pub mod wasm;
 
 pub use api::{InstanceApi, Streaming};
-pub use model::{
-    Account, Context, CustomEmoji, Draft, LocalId, Notification, NotificationKind, Page,
-    PageParams, Relationship, Status, StreamKind, Visibility,
-};
-#[cfg(feature = "native")]
-pub use native::HttpInstance;
+pub use model::*;
 pub use sync_api::SyncApi;
-#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
-pub use wasm::BrowserInstance;
 
 use url::Url;
 

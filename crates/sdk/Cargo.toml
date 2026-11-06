@@ -8,12 +8,14 @@ license.workspace = true
 publish.workspace = true
 repository.workspace = true
 
+# The facade owns no logic: every dependency below is re-exported so a consumer
+# can reach the pieces without adding a crate line per layer.
 [dependencies]
-nodus-shared = { workspace = true }
-nodus-instance = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_json.workspace = true
-thiserror.workspace = true
+nodus-discovery = { workspace = true }
+nodus-instance-api = { workspace = true }
+nodus-persist = { workspace = true }
+nodus-runtime = { workspace = true }
+nodus-state = { workspace = true }
 
 [lints]
 workspace = true

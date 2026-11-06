@@ -1,6 +1,6 @@
 [package]
-name = "nodus-instance"
-description = "Typed Mastodon client shared by the sync worker (native) and the web client (wasm)"
+name = "nodus-instance-rest"
+description = "Mastodon transports: reqwest for native builds, gloo-net for the browser"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,44 +9,25 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-nodus-shared = { workspace = true }
+nodus-instance-api = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-thiserror = { workspace = true }
 url = { workspace = true }
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "webpki-roots"], optional = true }
-gloo-net = { version = "0.6", default-features = false, features = ["http", "websocket"], optional = true }
+gloo-net = { version = "0.6", default-features = false, features = ["http"], optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
-wasm-bindgen-futures = { version = "0.4", optional = true }
 js-sys = { version = "0.3", optional = true }
 web-sys = { version = "0.3", optional = true, features = [
-    "Window",
-    "Request",
-    "RequestInit",
-    "RequestMode",
-    "Headers",
-    "Response",
-    "WebSocket",
-    "MessageEvent",
-    "Event",
-    "CloseEvent",
     "BinaryType",
+    "MessageEvent",
+    "WebSocket",
 ] }
 
 [features]
 # The `reqwest` transport, for the calculator and native tests.
 native = ["dep:reqwest"]
 # The browser transport, for the web client; only built for `wasm32`.
-wasm = [
-    "dep:gloo-net",
-    "dep:wasm-bindgen",
-    "dep:wasm-bindgen-futures",
-    "dep:js-sys",
-    "dep:web-sys",
-]
+wasm = ["dep:gloo-net", "dep:wasm-bindgen", "dep:js-sys", "dep:web-sys"]
 
 [lints]
 workspace = true
-
-[dev-dependencies]
-serde_json = { workspace = true }

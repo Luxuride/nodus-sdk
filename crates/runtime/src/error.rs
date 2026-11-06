@@ -1,20 +1,11 @@
 //! Errors crossing the SDK boundary.
+//!
+//! Cache failures are not defined here: they belong to `nodus-persist`, and this
+//! crate only wraps them so a view handles one error type.
 
 use core::fmt;
 
-/// Why a cached value could not be read or written.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-pub enum PersistenceError {
-    /// The store is unavailable (private mode, quota exhausted, permission denied).
-    #[error("storage unavailable: {0}")]
-    Unavailable(String),
-    /// The stored entry does not match the current schema.
-    #[error("cache entry is corrupt: {0}")]
-    Corrupt(String),
-    /// A value could not be encoded or decoded.
-    #[error("cache (de)serialisation failed: {0}")]
-    Serde(String),
-}
+pub use nodus_persist::PersistenceError;
 
 /// Why an SDK operation failed.
 ///
@@ -32,7 +23,7 @@ pub enum SdkError<I, D> {
     Discovery(D),
     /// Cached state could not be read or written.
     #[error(transparent)]
-    Persistence(#[from] PersistenceError),
+    Persistence(#[from] nodus_persist::PersistenceError),
     /// The operation needs a signed-in session and there is none.
     #[error("not signed in")]
     NotSignedIn,

@@ -7,15 +7,15 @@
 
 use core::future::Future;
 
-use nodus_instance::{
+use nodus_instance_api::{
     Account, Context, Draft, InstanceApi, LocalId, Notification, Page, PageParams, Relationship,
     Status, StreamKind,
 };
+use nodus_persist::MemoryPersistence;
 use nodus_shared::{AccountFeed, EventBatch, Meta};
+use nodus_state::Discovery;
 
 use crate::clock::SystemClock;
-use crate::discovery::Discovery;
-use crate::persistence::MemoryPersistence;
 use crate::sdk::Sdk;
 
 /// Why a call was attempted before transports exist.

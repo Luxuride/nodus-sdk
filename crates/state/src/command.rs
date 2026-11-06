@@ -10,7 +10,7 @@ use crate::state::{Session, StreamState, Timeline, TimelinePage};
 /// A change the client wants applied.
 ///
 /// Commands that are pure state transitions are handled by
-/// [`Sdk::dispatch`](crate::Sdk::dispatch) today. Commands that need I/O are
+/// `Sdk::dispatch` in `nodus-runtime` today. Commands that need I/O are
 /// applied by the corresponding `async` method on the SDK — the enum stays the
 /// single description of the resulting state changes either way.
 #[derive(Debug, Clone, PartialEq)]

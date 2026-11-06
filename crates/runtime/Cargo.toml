@@ -1,0 +1,20 @@
+[package]
+name = "nodus-runtime"
+description = "The SDK state machine Sdk<I, D, P, C>, its clock, the M0 shell and SdkError"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+nodus-instance-api = { workspace = true }
+nodus-persist = { workspace = true }
+nodus-shared = { workspace = true }
+nodus-state = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

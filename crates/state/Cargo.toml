@@ -1,0 +1,16 @@
+[package]
+name = "nodus-state"
+description = "The observed client state tree and the command vocabulary that changes it, with no I/O"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+nodus-shared = { workspace = true }
+serde = { workspace = true }
+
+[lints]
+workspace = true

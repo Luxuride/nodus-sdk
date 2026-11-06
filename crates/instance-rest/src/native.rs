@@ -15,13 +15,13 @@ use reqwest::{Client, RequestBuilder, Response, StatusCode};
 use serde::de::DeserializeOwned;
 use url::Url;
 
-use crate::api::InstanceApi;
-use crate::model::{
+use nodus_instance_api::api::InstanceApi;
+use nodus_instance_api::model::{
     Account, Context, Draft, LocalId, Notification, Page, PageParams, Relationship, Status,
     StreamKind,
 };
-use crate::sync_api::SyncApi;
-use crate::{Error, Instance, Result};
+use nodus_instance_api::sync_api::SyncApi;
+use nodus_instance_api::{Error, Instance, Result};
 
 /// Seconds to wait when an instance rate-limits us without saying for how long.
 ///
@@ -389,7 +389,7 @@ impl SyncApi for HttpInstance {
 #[cfg(test)]
 mod tests {
     use super::{error_message, status_error};
-    use crate::Error;
+    use nodus_instance_api::Error;
     use reqwest::StatusCode;
 
     #[test]

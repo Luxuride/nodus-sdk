@@ -94,6 +94,6 @@ pub trait Streaming {
     /// Opens a socket for `kind`, delivering raw JSON event payloads.
     ///
     /// The implementation owns reconnection; the SDK only observes the resulting
-    /// [`crate::StreamState`] transitions.
+    /// `StreamState` transitions in `nodus-state`.
     fn subscribe(&self, kind: StreamKind) -> impl Future<Output = Result<(), Self::Error>>;
 }

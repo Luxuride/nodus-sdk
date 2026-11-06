@@ -1,10 +1,70 @@
 # 02 — Architecture
 
-Status: draft · Last revised: 2026-11-06
+Status: draft · Last revised: 2026-11-07
 
-The state machine and the ports it runs on. Everything here is in
-`crates/sdk/src/`; the boundary rules are in [01-scope.md](01-scope.md), and the
-wire types the `Discovery` port carries are in [03-contract.md](03-contract.md).
+The state machine and the ports it runs on. The crate split is below; the
+boundary rules are in [01-scope.md](01-scope.md), and the wire types the
+`Discovery` port carries are in [03-contract.md](03-contract.md).
+
+## Crate layout
+
+Nine crates, one concern each. `nodus-sdk` is a facade: it owns no types and no
+logic, only re-exports, so `use nodus_sdk::{…}` is still the way a consumer
+reaches everything.
+
+| Crate | Owns | Depends on |
+| --- | --- | --- |
+| `nodus-shared` | wire types both planes agree on (`AccountFeed`, `EventBatch`, `Meta`, contract versions) | — |
+| `nodus-instance-model` | Mastodon domain types (`Status`, `Account`, `Page`, `LocalId`, …) | `serde` |
+| `nodus-instance-api` | the instance surface as traits (`InstanceApi`, `SyncApi`, `Streaming`), `Error`, `Result`, `Instance`, `AppRegistration` | `instance-model`, `url`, `thiserror` |
+| `nodus-instance-rest` | the two transports: `HttpInstance` (`reqwest`, feature `native`) and `BrowserInstance` (`gloo-net`, feature `wasm`) | `instance-api`, optional `reqwest` / `gloo-net` |
+| `nodus-discovery` | our recommendation API transport, implementing `Discovery` | `state`, `shared` |
+| `nodus-persist` | the cache port (`Persistence`, `CacheKey`, `PersistenceError`) and `MemoryPersistence` | `state` |
+| `nodus-state` | the observed state tree and its vocabulary: `AppState`, `Handle`, `Command`, `FeedState`, `Timeline`, `TimelinePage`, `Degraded`, `Session`, `StreamState`, and the `Discovery` port | `shared`, `serde` |
+| `nodus-runtime` | the state machine `Sdk<I, D, P, C>`, `Clock`, the M0 shell (`Unavailable*`), `SdkError` | `state`, `instance-api`, `persist`, `shared` |
+| `nodus-sdk` | facade only: re-exports and a `prelude` | `runtime`, `state`, `persist`, `instance-api`, `discovery` (re-export only) |
+
+The arrows point one way:
+
+```text
+nodus-sdk (facade) ──▶ nodus-runtime ──▶ nodus-state ──▶ nodus-shared
+        │                    ├──▶ nodus-persist ──▶ nodus-state
+        │                    └──▶ nodus-instance-api ──▶ nodus-instance-model
+        ├──▶ nodus-discovery ──▶ nodus-state, nodus-shared
+        └──▶ nodus-persist, nodus-state, nodus-instance-api (re-exports only)
+
+nodus-instance-rest ──▶ nodus-instance-api ──▶ nodus-instance-model
+```
+
+`persist` → `state` (not the other way) because `CacheKey::Timeline` names a
+`Timeline`: the cache key vocabulary has to see the state vocabulary, while state
+never sees the cache. `discovery` → `state` for the same reason — it implements
+the `Discovery` trait, which `state` owns.
+
+### Why these boundaries
+
+Protocol, state, transport and facade are four different reasons to change, so
+they are four crates. `instance-model` + `instance-api` are the *protocol*: what
+an instance is and what can be asked of it. `state` is *state*: the tree a view
+observes and the commands that change it, with no I/O and no async. `runtime` is
+the *state machine*: it sequences protocol calls and state transitions, which is
+why it depends on the traits and never on a transport. `instance-rest` and
+`discovery` are *transports*: they own HTTP, timeouts, retries and error mapping
+for one plane each. `sdk` is the *facade*: one stable import path for consumers,
+zero logic.
+
+The rule that makes the split hold: **a crate that reads or owns state never talks
+to the network.** `state` and `persist` have no HTTP dependency, so a `wasm32`
+surface and a native build share exactly the same state code. Consequently the
+only `#[cfg(feature = "wasm")]` / `#[cfg(target_arch = "wasm32")]` lives in
+`instance-rest` and `discovery` — the crates that actually choose a transport. A
+`cfg` anywhere else would mean a transport concern leaked, and the fix is to move
+the concern out rather than gate it.
+
+`discovery` depends on `state` (it implements the `Discovery` trait, which
+`state` owns) and `sdk` depends on `discovery` only to re-export it. The trait
+deliberately lives in `state`, not in the facade: owning it in `nodus-sdk` would
+make `discovery` depend on `sdk` while `sdk` depends on `discovery` — a cycle.
 
 ## Two planes, one state machine
 
@@ -63,7 +123,7 @@ Details that constrain implementations:
 - `InstanceApi::Error` and `Discovery::Error` are the transport's own error types;
   the SDK maps them into `SdkError` at its boundary, so an implementation never
   translates into an enum it does not own.
-- `Streaming` is a separate trait in `nodus-instance` with one method,
+- `Streaming` is a separate trait in `nodus-instance-api` with one method,
   `subscribe(kind)`. Streaming is optional — the sync worker polls, the browser
   streams, tests do neither — so it is not a method on `InstanceApi`. The
   implementation owns reconnection; the SDK only observes `StreamState`.
@@ -154,8 +214,10 @@ version rules behind `ClientTooOld` are in [03-contract.md](03-contract.md).
 
 ## Why this compiles for both targets
 
-Nothing in `crates/sdk` depends on `reqwest`, `web-sys`, `gloo-net` or a runtime.
-The wasm build injects HTTP and IndexedDB; the native test build injects scripted
-doubles; the state machine and its transitions are identical in both. That is the
-property the `wasm32` CI check protects — see
+Nothing in `nodus-state`, `nodus-persist` or `nodus-runtime` depends on `reqwest`,
+`web-sys`, `gloo-net` or a runtime. The wasm build injects HTTP (`BrowserInstance`)
+and IndexedDB; the native test build injects scripted doubles; the state machine
+and its transitions are identical in both. Only `nodus-instance-rest` and
+`nodus-discovery` carry a `cfg(feature = "wasm")` / `cfg(target_arch = "wasm32")`
+switch. That is the property the `wasm32` CI check protects — see
 [03-contract.md](03-contract.md#compatibility-ci).

@@ -1,11 +1,12 @@
 //! Client for the Nodus discovery API: our recommendation service, not Mastodon.
 //!
-//! The two planes are deliberately separate. `nodus-instance` talks to the user's
-//! server; this crate talks to us, over JSON REST with a Mastodon bearer token and
-//! a `X-Contract-Version` header on every request. Keeping the transport out of
-//! `nodus-sdk` is what lets the state machine compile without `reqwest` or
+//! The two planes are deliberately separate. `nodus-instance-rest` talks to the
+//! user's server; this crate talks to us, over JSON REST with a Mastodon bearer
+//! token and a `X-Contract-Version` header on every request. Keeping the transport
+//! out of `nodus-sdk` is what lets the state machine compile without `reqwest` or
 //! `gloo-net`, and it is why this is a sibling crate rather than a module behind a
-//! feature of the SDK.
+//! feature of the SDK. The `Discovery` trait itself lives in `nodus-state`, so this
+//! crate can implement it without depending on the facade.
 //!
 //! Enable `native` for `DiscoveryClient` (`reqwest`, the calculator and native
 //! tests) or `wasm` for `BrowserDiscovery` (`gloo-net` and `web-sys`, the web
