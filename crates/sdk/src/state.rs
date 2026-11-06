@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use mastodon_reccom_shared::{AccountFeed, AccountItem};
+use nodus_shared::{AccountFeed, AccountItem};
 
 use crate::handle::Handle;
 

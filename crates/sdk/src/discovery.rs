@@ -7,7 +7,7 @@
 
 use core::future::Future;
 
-use mastodon_reccom_shared::{AccountFeed, EventBatch, Meta};
+use nodus_shared::{AccountFeed, EventBatch, Meta};
 
 /// The recommendation service, as the client needs it.
 pub trait Discovery {

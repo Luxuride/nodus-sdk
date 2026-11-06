@@ -16,7 +16,7 @@ use crate::state::{Session, StreamState, Timeline, TimelinePage};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     /// A fresh feed page arrived from the discovery API.
-    FeedLoaded(mastodon_reccom_shared::AccountFeed),
+    FeedLoaded(nodus_shared::AccountFeed),
 
     /// The user dismissed a recommendation.
     DismissItem {

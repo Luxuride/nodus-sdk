@@ -1,5 +1,5 @@
 [package]
-name = "mastodon-reccom-shared"
+name = "nodus-shared"
 description = "Wire contract between the recommendation API and its clients"
 version.workspace = true
 edition.workspace = true

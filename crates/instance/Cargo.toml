@@ -1,5 +1,5 @@
 [package]
-name = "mastodon-reccom-mastodon"
+name = "nodus-instance"
 description = "Typed Mastodon client shared by the sync worker (native) and the web client (wasm)"
 version.workspace = true
 edition.workspace = true
@@ -9,7 +9,7 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-mastodon-reccom-shared = { workspace = true }
+nodus-shared = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }

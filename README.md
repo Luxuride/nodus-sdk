@@ -1,4 +1,4 @@
-# mastodon-reccom-sdk
+# nodus-sdk
 
 The Mastodon client SDK: everything the web client knows, and nothing about how
 it looks.
@@ -19,9 +19,9 @@ for the browser, once for the sync worker) and drift.
 
 | Crate | Purpose |
 | --- | --- |
-| `mastodon-reccom-shared` | Wire contract with our recommendation API (`AccountFeed`, `EventBatch`, `Meta`, errors). No I/O, no async, compiles for `wasm32` and `x86_64`. |
-| `mastodon-reccom-mastodon` | Mastodon domain model (`Status`, `Account`, `Notification`, `Page`, …) and the instance trait [`InstanceApi`] that transports implement. |
-| `mastodon-reccom-sdk` | The state machine: [`Sdk<I, D, P, C>`], [`AppState`], [`Command`], and the ports it runs on. |
+| `nodus-shared` | Wire contract with our recommendation API (`AccountFeed`, `EventBatch`, `Meta`, errors). No I/O, no async, compiles for `wasm32` and `x86_64`. |
+| `nodus-instance` | Mastodon domain model (`Status`, `Account`, `Notification`, `Page`, …) and the instance trait [`InstanceApi`] that transports implement. |
+| `nodus-sdk` | The state machine: [`Sdk<I, D, P, C>`], [`AppState`], [`Command`], and the ports it runs on. |
 
 ## Ports (traits) and generics
 
@@ -50,7 +50,7 @@ weaken the Feed tab). Keeping them separate is why
 `SdkError::Instance` and `SdkError::Discovery` are distinct and why
 `SdkError::is_discovery_only()` can exist.
 
-[`InstanceApi`]: crates/mastodon/src/api.rs
+[`InstanceApi`]: crates/instance/src/api.rs
 [`Sdk<I, D, P, C>`]: crates/sdk/src/sdk.rs
 [`AppState`]: crates/sdk/src/state.rs
 [`Command`]: crates/sdk/src/command.rs
@@ -84,13 +84,13 @@ Rules that keep it honest:
 
 ## How consumers depend on this repository
 
-The three projects are submodules of one superproject (`MastodonReccom`), so this
+The three projects are submodules of one superproject (`Nodus`), so this
 checkout always sits at `../sdk` relative to `backend` and `web`. Consumers use
 plain path dependencies:
 
 ```toml
-mastodon-reccom-shared = { path = "../sdk/crates/shared", version = "0.1.0" }
-mastodon-reccom-sdk    = { path = "../sdk/crates/sdk",    version = "0.1.0" }
+nodus-shared = { path = "../sdk/crates/shared", version = "0.1.0" }
+nodus-sdk    = { path = "../sdk/crates/sdk",    version = "0.1.0" }
 ```
 
 Why paths and not `git = "https://…"`:
@@ -126,3 +126,10 @@ impressions arrive in M1/M2.
 
 See `backend/docs/08-sdk.md` for the contract and versioning rules, and
 `web/docs/03-data-layer.md` for how the client uses the ports.
+
+## Trademark
+
+Nodus is not affiliated with, endorsed by, or sponsored by Mastodon GmbH.
+"Mastodon" is a trademark of Mastodon GmbH and is used in this repository only
+to describe compatibility; it is deliberately absent from the crate name
+(`nodus-instance`, not `mastodon-*`). See `backend/docs/12-trademark.md`.

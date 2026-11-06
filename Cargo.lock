@@ -137,10 +137,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47d9d19d1d6efa0109d2f65ff4c85cddd50bd572e5a00127ab10987290bcefae"
 
 [[package]]
-name = "mastodon-reccom-mastodon"
+name = "memchr"
+version = "2.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "nodus-instance"
 version = "0.1.0"
 dependencies = [
- "mastodon-reccom-shared",
+ "nodus-shared",
  "serde",
  "serde_json",
  "thiserror",
@@ -148,28 +154,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "mastodon-reccom-sdk"
+name = "nodus-sdk"
 version = "0.1.0"
 dependencies = [
- "mastodon-reccom-mastodon",
- "mastodon-reccom-shared",
+ "nodus-instance",
+ "nodus-shared",
  "serde",
  "serde_json",
  "thiserror",
 ]
 
 [[package]]
-name = "mastodon-reccom-shared"
+name = "nodus-shared"
 version = "0.1.0"
 dependencies = [
  "serde",
 ]
-
-[[package]]
-name = "memchr"
-version = "2.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "percent-encoding"

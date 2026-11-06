@@ -12,7 +12,7 @@
 //!
 //! ```text
 //! Sdk<I, D, P, C>
-//!  I: InstanceApi  — the Mastodon instance surface (see mastodon-reccom-mastodon)
+//!  I: InstanceApi  — the Mastodon instance surface (see nodus-instance)
 //!  D: Discovery    — our recommendation API surface
 //!  P: Persistence  — where cached state goes (memory, IndexedDB, …)
 //!  C: Clock        — time, so tests are deterministic
@@ -57,4 +57,4 @@ pub use sdk::Sdk;
 pub use shell::{ShellSdk, Unavailable, shell_sdk};
 pub use state::{AppState, Degraded, FeedState, Session, StreamState, Timeline, TimelinePage};
 
-pub use mastodon_reccom_mastodon::InstanceApi;
+pub use nodus_instance::InstanceApi;

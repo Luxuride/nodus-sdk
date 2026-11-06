@@ -7,11 +7,11 @@
 
 use core::future::Future;
 
-use mastodon_reccom_mastodon::{
+use nodus_instance::{
     Account, Context, Draft, InstanceApi, LocalId, Notification, Page, PageParams, Relationship,
     Status, StreamKind,
 };
-use mastodon_reccom_shared::{AccountFeed, EventBatch, Meta};
+use nodus_shared::{AccountFeed, EventBatch, Meta};
 
 use crate::clock::SystemClock;
 use crate::discovery::Discovery;

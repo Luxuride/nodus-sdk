@@ -1,7 +1,7 @@
 //! The SDK itself: one generic state machine over four ports.
 
-use mastodon_reccom_mastodon::{InstanceApi, PageParams, StreamKind};
-use mastodon_reccom_shared::{AccountFeed, EventBatch};
+use nodus_instance::{InstanceApi, PageParams, StreamKind};
+use nodus_shared::{AccountFeed, EventBatch};
 
 use crate::clock::Clock;
 use crate::command::Command;
