@@ -9,7 +9,7 @@ The client is deliberately split in two:
 | --- | --- |
 | `sdk` (this repository) | Session, timelines, feed, streaming status, cache policy, transport traits, the Mastodon domain types |
 | `web` | Rendering that state, and turning user input into commands |
-| `backend` | Recommendations, sync, storage |
+| `recommender` | Recommendations, sync, storage |
 
 The web client renders SDK state and dispatches commands. It does not fetch, cache,
 paginate or decide *what* to show — otherwise the same logic would exist twice (once
@@ -85,7 +85,7 @@ Rules that keep it honest:
 ## How consumers depend on this repository
 
 The three projects are submodules of one superproject (`Nodus`), so this
-checkout always sits at `../sdk` relative to `backend` and `web`. Consumers use
+checkout always sits at `../sdk` relative to `recommender` and `web`. Consumers use
 plain path dependencies:
 
 ```toml
@@ -104,8 +104,8 @@ Why paths and not `git = "https://…"`:
 * offline builds and CI caching stay simple.
 
 Git dependencies become the right answer when an *external* consumer appears that
-is not part of this superproject; see `docs/08-sdk.md` in the backend repository for
-the pinning and versioning rules that already cover that case.
+is not part of this superproject; see [03-contract.md](docs/03-contract.md) for the
+pinning and versioning rules that already cover that case.
 
 ## Building
 
@@ -122,14 +122,17 @@ dependency that only builds on one of them is a bug.
 
 M0 (this commit): state, commands, ports, error model, and the pure state
 transitions, with tests. Transports, streaming, IndexedDB and the sync of feed
-impressions arrive in M1/M2.
+impressions arrive in M1/M2; see [docs/04-roadmap.md](docs/04-roadmap.md).
 
-See `backend/docs/08-sdk.md` for the contract and versioning rules, and
-`web/docs/03-data-layer.md` for how the client uses the ports.
+See [docs/03-contract.md](docs/03-contract.md) for the contract and versioning
+rules, [docs/02-architecture.md](docs/02-architecture.md) for the state model, and
+[`web/docs/03-data-layer.md`](../web/docs/03-data-layer.md) for how the client uses
+the ports.
 
 ## Trademark
 
 Nodus is not affiliated with, endorsed by, or sponsored by Mastodon GmbH.
 "Mastodon" is a trademark of Mastodon GmbH and is used in this repository only
 to describe compatibility; it is deliberately absent from the crate name
-(`nodus-instance`, not `mastodon-*`). See `backend/docs/12-trademark.md`.
+(`nodus-instance`, not `mastodon-*`). See
+[`recommender/docs/11-trademark.md`](../recommender/docs/11-trademark.md).
