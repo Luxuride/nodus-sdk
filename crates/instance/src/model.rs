@@ -48,7 +48,7 @@ pub struct Account {
 }
 
 /// A thread around one status: what it replies to, and what replies to it.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Context {
     /// Statuses above the focus, oldest first.
     pub ancestors: Vec<Status>,
@@ -92,6 +92,22 @@ pub enum Visibility {
     Private,
     /// Visible to mentioned accounts only.
     Direct,
+}
+
+impl Visibility {
+    /// The wire spelling Mastodon's form endpoints expect.
+    ///
+    /// Kept next to the enum so a form post and a JSON body cannot disagree about
+    /// what `private` is called; a test pins it to the serde name.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Public => "public",
+            Self::Unlisted => "unlisted",
+            Self::Private => "private",
+            Self::Direct => "direct",
+        }
+    }
 }
 
 /// A status (post).

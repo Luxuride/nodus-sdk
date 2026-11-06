@@ -11,8 +11,14 @@ repository.workspace = true
 [dependencies]
 nodus-shared = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
 url = { workspace = true }
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "webpki-roots"], optional = true }
+
+[features]
+# The `reqwest` transport, for the calculator and native tests.
+native = ["dep:reqwest"]
 
 [lints]
 workspace = true

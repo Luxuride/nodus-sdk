@@ -12,17 +12,25 @@
 //! Layout:
 //!
 //! * [`model`] — the instance's data shapes ([`Status`], [`Account`], …);
-//! * [`api::InstanceApi`] — the operations, as traits consumers are generic over;
+//! * [`api::InstanceApi`] — what a signed-in person can do, as a trait;
+//! * [`sync_api::SyncApi`] — the read-only crawl surface (`following`,
+//!   `favourites`, `bookmarks`), deliberately without any write method;
 //! * this module — errors and instance/app registration helpers.
 
 pub mod api;
 pub mod model;
+#[cfg(feature = "native")]
+pub mod native;
+pub mod sync_api;
 
 pub use api::{InstanceApi, Streaming};
 pub use model::{
     Account, Context, CustomEmoji, Draft, LocalId, Notification, NotificationKind, Page,
     PageParams, Relationship, Status, StreamKind, Visibility,
 };
+#[cfg(feature = "native")]
+pub use native::HttpInstance;
+pub use sync_api::SyncApi;
 
 use url::Url;
 
