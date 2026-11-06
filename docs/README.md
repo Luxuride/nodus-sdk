@@ -22,6 +22,7 @@ machine the web client renders. Three crates, and nothing else:
 | [02-architecture.md](02-architecture.md) | The three crates, the four ports, `Sdk<I, D, P, C>`, `Command`, the state tree |
 | [03-contract.md](03-contract.md) | Contract versioning, coexistence, pinning via submodules, compatibility CI, failure modes |
 | [04-roadmap.md](04-roadmap.md) | The SDK-facing slice of the milestones, and what is deferred |
+| [05-ports.md](05-ports.md) | The four ports, what a wrong implementation can and cannot break, and how to add one |
 
 ## Where the rest of the design lives
 
