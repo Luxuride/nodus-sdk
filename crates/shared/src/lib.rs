@@ -21,6 +21,13 @@ use serde::{Deserialize, Serialize};
 /// breaking ones.
 pub const CONTRACT_VERSION: &str = "0.1.0";
 
+/// Oldest contract version this build still accepts from a client.
+///
+/// Raised only on a major change, once the server no longer honours the old
+/// semantics. A client that sends `X-Contract-Version` below this value receives
+/// `426 client_too_old` and must be updated. See `sdk/docs/03-contract.md`.
+pub const MIN_CONTRACT_VERSION: &str = "0.1.0";
+
 /// A Mastodon account as the recommendation feed reports it.
 ///
 /// Deliberately smaller than the Mastodon API's account entity: the client
