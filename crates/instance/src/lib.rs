@@ -6,7 +6,7 @@
 //! endpoint definitions in one place is the point: the worker and the browser
 //! cannot drift on pagination, error mapping or rate-limit headers.
 //!
-//! See `docs/08-sdk.md` in the backend repository for why this crate lives in the
+//! See `docs/03-contract.md` for why this crate lives in the
 //! SDK repository rather than in either consumer.
 //!
 //! Layout:
@@ -22,6 +22,8 @@ pub mod model;
 #[cfg(feature = "native")]
 pub mod native;
 pub mod sync_api;
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+pub mod wasm;
 
 pub use api::{InstanceApi, Streaming};
 pub use model::{
@@ -31,6 +33,8 @@ pub use model::{
 #[cfg(feature = "native")]
 pub use native::HttpInstance;
 pub use sync_api::SyncApi;
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+pub use wasm::BrowserInstance;
 
 use url::Url;
 
