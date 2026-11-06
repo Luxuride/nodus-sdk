@@ -187,3 +187,37 @@ pub struct ApiError {
     #[serde(default)]
     pub retry_after_s: Option<u32>,
 }
+
+/// A request to turn background sync on or off for the caller's account.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SyncTokenRequest {
+    /// Whether the service may keep an encrypted copy of the token.
+    pub enable: bool,
+    /// Whether interaction telemetry may be kept. Independent of `enable`.
+    #[serde(default)]
+    pub telemetry_opt_in: bool,
+}
+
+/// The two independent consent switches, as the service currently has them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SyncSettings {
+    /// Whether a token is held and background sync runs.
+    pub sync_enabled: bool,
+    /// Whether interaction telemetry is kept.
+    pub telemetry_opt_in: bool,
+}
+
+/// The caller's account as this service knows it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MeResponse {
+    /// `user@host` as the instance spells it.
+    pub acct: String,
+    /// Instance the account lives on.
+    pub instance_host: String,
+    /// Whether a token is held for background sync.
+    pub sync_enabled: bool,
+    /// Whether telemetry is kept.
+    pub telemetry_opt_in: bool,
+    /// Contract version this service implements.
+    pub contract: String,
+}
