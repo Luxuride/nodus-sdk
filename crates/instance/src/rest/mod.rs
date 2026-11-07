@@ -20,7 +20,7 @@ use core::future::Future;
 use serde::de::DeserializeOwned;
 use url::Url;
 
-use crate::model::{Account, Notification, Page, PageParams, Status};
+use crate::model::{Account, Conversation, List, Notification, Page, PageParams, Status};
 use crate::{Error, Instance, Result};
 
 pub mod api;
@@ -70,6 +70,12 @@ pub enum Method {
     Get,
     /// Write.
     Post,
+    /// Replace.
+    ///
+    /// Only edits and list renames use it, but both are full replacements of the
+    /// resource they address, so `PUT` is the truthful verb rather than a `POST`
+    /// with a `_method` override.
+    Put,
     /// Remove.
     Delete,
 }
@@ -81,6 +87,7 @@ impl Method {
         match self {
             Self::Get => "GET",
             Self::Post => "POST",
+            Self::Put => "PUT",
             Self::Delete => "DELETE",
         }
     }
@@ -233,22 +240,33 @@ impl<T: Transport> RestInstance<T> {
         self.request(Method::Post, url, None)
     }
 
+    /// A PUT with the bearer token attached.
+    pub fn put(&self, url: Url) -> HttpRequest {
+        self.request(Method::Put, url, None)
+    }
+
+    /// A form-encoded PUT.
+    pub fn put_form(&self, url: Url, form: &[(&str, String)]) -> HttpRequest {
+        self.request(Method::Put, url, Some(form_body(form)))
+    }
+
     /// A form-encoded POST.
     pub fn post_form(&self, url: Url, form: &[(&str, String)]) -> HttpRequest {
-        let body = url::form_urlencoded::Serializer::new(String::new())
-            .extend_pairs(form.iter().map(|(key, value)| (*key, value.as_str())))
-            .finish()
-            .into_bytes();
-        self.request(
-            Method::Post,
-            url,
-            Some(("application/x-www-form-urlencoded".to_owned(), body)),
-        )
+        self.request(Method::Post, url, Some(form_body(form)))
     }
 
     /// A DELETE with the bearer token attached.
     pub fn delete(&self, url: Url) -> HttpRequest {
         self.request(Method::Delete, url, None)
+    }
+
+    /// A form-encoded DELETE.
+    ///
+    /// Mastodon's "remove these accounts from this list" is a DELETE with a body; a
+    /// query string would work for small batches and break on long ones, so the body it
+    /// is, and it is the only reason this method exists.
+    pub fn delete_form(&self, url: Url, form: &[(&str, String)]) -> HttpRequest {
+        self.request(Method::Delete, url, Some(form_body(form)))
     }
 
     /// Sends a request and decodes the body, mapping statuses to [`Error`].
@@ -302,6 +320,30 @@ impl HasId for Notification {
     fn id(&self) -> &str {
         &self.id
     }
+}
+
+impl HasId for Conversation {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+impl HasId for List {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+/// Encodes a form body and its content type.
+///
+/// Shared by `post_form`, `put_form` and the two endpoints that send a repeated key
+/// (`choices[]`, `id[]`), so the encoding cannot drift between verbs.
+fn form_body(form: &[(&str, String)]) -> (String, Vec<u8>) {
+    let body = url::form_urlencoded::Serializer::new(String::new())
+        .extend_pairs(form.iter().map(|(key, value)| (*key, value.as_str())))
+        .finish()
+        .into_bytes();
+    ("application/x-www-form-urlencoded".to_owned(), body)
 }
 
 /// Decodes a response body or turns its status into an [`Error`].

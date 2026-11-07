@@ -6,6 +6,13 @@
 //! tooling must agree on them, and a wire change to an instance should be a change
 //! in exactly one place.
 
+mod interaction;
+
+pub use interaction::{
+    Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
+    SearchResults, Tag, TagHistory,
+};
+
 use serde::{Deserialize, Serialize};
 
 /// An account, as returned by `/api/v1/accounts/:id`.
@@ -112,6 +119,13 @@ impl Visibility {
 
 /// A status (post).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+// The flags are the wire's, not ours: Mastodon sends five independent booleans about
+// the viewer's relationship to a status, and folding them into a bitset would make
+// every consumer rediscover which bit is which.
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "the wire has independent flags and a DTO must mirror it"
+)]
 pub struct Status {
     /// Instance-local id.
     pub id: String,
@@ -151,6 +165,33 @@ pub struct Status {
     /// Emoji used in the content.
     #[serde(default)]
     pub emojis: Vec<CustomEmoji>,
+    /// Permalink on the instance, when the status is public enough to have one.
+    #[serde(default)]
+    pub url: Option<String>,
+    /// Whether the media should stay behind a click.
+    #[serde(default)]
+    pub sensitive: bool,
+    /// Content warning, plain text.
+    #[serde(default)]
+    pub spoiler_text: String,
+    /// Attached media, in display order.
+    #[serde(default)]
+    pub media_attachments: Vec<MediaAttachment>,
+    /// Accounts mentioned in the content.
+    #[serde(default)]
+    pub mentions: Vec<Mention>,
+    /// Hashtags in the content.
+    #[serde(default)]
+    pub tags: Vec<Tag>,
+    /// The attached poll, when there is one.
+    #[serde(default)]
+    pub poll: Option<Poll>,
+    /// When it was last edited, if it ever was.
+    #[serde(default)]
+    pub edited_at: Option<String>,
+    /// Whether the author pinned it to their profile.
+    #[serde(default)]
+    pub pinned: Option<bool>,
 }
 
 /// Kind of notification.

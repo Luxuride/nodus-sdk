@@ -65,6 +65,7 @@ impl Transport for ReqwestTransport {
         let http_method = match method {
             Method::Get => reqwest::Method::GET,
             Method::Post => reqwest::Method::POST,
+            Method::Put => reqwest::Method::PUT,
             Method::Delete => reqwest::Method::DELETE,
         };
         let mut builder = self.http.request(http_method, url.clone());

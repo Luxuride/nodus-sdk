@@ -18,6 +18,7 @@
 //! this crate is the compatibility floor, and a client that only understands
 //! this crate works against any Mastodon instance.
 
+pub mod actions;
 pub mod api;
 pub mod model;
 pub mod rest;
