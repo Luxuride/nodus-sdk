@@ -6,7 +6,7 @@
 
 use crate::actions::AdminActions;
 use crate::model::{
-    AdminAccount, DomainBlock, DomainSeverity, ModerationAction, Report, ReportState,
+    AdminAccount, Announcement, DomainBlock, DomainSeverity, ModerationAction, Report, ReportState,
 };
 use crate::rest::{RestInstance, Transport};
 use crate::{Error, Result};
@@ -72,5 +72,32 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         // The body of a delete is empty, so it cannot be decoded as the removed block.
         let _: serde_json::Value = self.fetch(self.delete(url)).await?;
         Ok(())
+    }
+
+    async fn admin_announcements(&self) -> Result<Vec<Announcement>> {
+        let url = self.url("/api/v1/admin/announcements")?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn create_announcement(
+        &self,
+        content: &str,
+        starts_at: Option<&str>,
+        ends_at: Option<&str>,
+    ) -> Result<Announcement> {
+        let url = self.url("/api/v1/admin/announcements")?;
+        let mut form = vec![("content", content.to_owned())];
+        if let Some(starts_at) = starts_at {
+            form.push(("starts_at", starts_at.to_owned()));
+        }
+        if let Some(ends_at) = ends_at {
+            form.push(("ends_at", ends_at.to_owned()));
+        }
+        self.fetch(self.post_form(url, &form)).await
+    }
+
+    async fn delete_announcement(&self, id: &str) -> Result<()> {
+        let url = self.url(&format!("/api/v1/admin/announcements/{id}"))?;
+        self.fetch(self.delete(url)).await
     }
 }

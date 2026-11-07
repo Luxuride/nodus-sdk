@@ -353,6 +353,16 @@ pub trait AdminActions {
 
     /// Stop refusing a domain.
     fn delete_domain_block(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+    /// Announcements every account sees, including unpublished ones.
+    fn admin_announcements(&self) -> impl Future<Output = Result<Vec<Announcement>, Self::Error>>;
+    /// Publishes one. Empty `starts_at`/`ends_at` mean "now" and "never ends".
+    fn create_announcement(
+        &self,
+        content: &str,
+        starts_at: Option<&str>,
+        ends_at: Option<&str>,
+    ) -> impl Future<Output = Result<Announcement, Self::Error>>;
+    fn delete_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 }
 
 /// What the account asked for, and what the instance wants said.
