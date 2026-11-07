@@ -275,6 +275,12 @@ impl<T: Transport> Browse for RestInstance<T> {
         status_verb_quiet(self, &format!("/api/v1/conversations/{id}/read")).await
     }
 
+    async fn mute_conversation(&self, id: &str, muted: bool) -> Result<Conversation> {
+        let url = self.url(&format!("/api/v1/conversations/{id}/mute"))?;
+        let request = if muted { self.post(url) } else { self.delete(url) };
+        self.fetch(request).await
+    }
+
     async fn lists(&self) -> Result<Vec<List>> {
         let url = self.url("/api/v1/lists")?;
         self.fetch(self.get(url)).await

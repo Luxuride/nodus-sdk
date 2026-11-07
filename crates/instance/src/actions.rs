@@ -198,6 +198,13 @@ pub trait Browse {
     /// Marks a conversation as read.
     fn mark_conversation_read(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 
+    /// Mutes or unmutes a conversation.
+    fn mute_conversation(
+        &self,
+        id: &str,
+        muted: bool,
+    ) -> impl Future<Output = Result<Conversation, Self::Error>>;
+
     /// The account's lists.
     fn lists(&self) -> impl Future<Output = Result<Vec<List>, Self::Error>>;
 
