@@ -195,8 +195,13 @@ pub struct Status {
 }
 
 /// Kind of notification.
+///
+/// Parsed from the raw string rather than a renamed enum: the wire mixes conventions
+/// (`follow_request` and `admin.sign_up` are not `lowercase`), and an instance may add a
+/// kind before we know it. One unknown kind must not fail the whole notifications page,
+/// so anything unrecognised lands in [`NotificationKind::Unknown`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(from = "String", into = "String")]
 pub enum NotificationKind {
     /// Someone followed the account.
     Follow,
@@ -216,6 +221,50 @@ pub enum NotificationKind {
     AdminSignUp,
     /// Report (admin only).
     AdminReport,
+    /// A kind this client does not render, e.g. one a newer instance added.
+    Unknown,
+}
+
+impl NotificationKind {
+    /// The value the wire uses for this kind.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Follow => "follow",
+            Self::FollowRequest => "follow_request",
+            Self::Reblog => "reblog",
+            Self::Favourite => "favourite",
+            Self::Mention => "mention",
+            Self::Poll => "poll",
+            Self::Status => "status",
+            Self::AdminSignUp => "admin.sign_up",
+            Self::AdminReport => "admin.report",
+            // Never sent back: the server chose it, we only failed to recognise it.
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
+impl From<String> for NotificationKind {
+    fn from(raw: String) -> Self {
+        match raw.as_str() {
+            "follow" => Self::Follow,
+            "follow_request" => Self::FollowRequest,
+            "reblog" => Self::Reblog,
+            "favourite" => Self::Favourite,
+            "mention" => Self::Mention,
+            "poll" => Self::Poll,
+            "status" => Self::Status,
+            "admin.sign_up" => Self::AdminSignUp,
+            "admin.report" => Self::AdminReport,
+            _ => Self::Unknown,
+        }
+    }
+}
+
+impl From<NotificationKind> for String {
+    fn from(kind: NotificationKind) -> Self {
+        kind.as_str().to_owned()
+    }
 }
 
 /// A notification.
@@ -380,6 +429,40 @@ impl<T> Page<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn notification_kinds_follow_the_wire_not_a_naming_convention() {
+        // The instance sends `follow_request` and `admin.sign_up`; `rename_all =
+        // "lowercase"` would have produced `followrequest` and failed the whole page.
+        let cases = [
+            ("follow", NotificationKind::Follow),
+            ("follow_request", NotificationKind::FollowRequest),
+            ("favourite", NotificationKind::Favourite),
+            ("admin.sign_up", NotificationKind::AdminSignUp),
+            ("admin.report", NotificationKind::AdminReport),
+        ];
+        for (raw, expected) in cases {
+            let parsed: NotificationKind =
+                serde_json::from_str(&format!("\"{raw}\"")).expect("known kind");
+            assert_eq!(parsed, expected, "parsing {raw}");
+            let back = serde_json::to_string(&expected).expect("serialisable");
+            assert_eq!(back, format!("\"{raw}\""));
+        }
+    }
+
+    #[test]
+    fn one_unknown_notification_kind_does_not_fail_the_page() {
+        // A newer instance may add a kind (Mastodon has `update` and
+        // `severed_relationships`); the notifications list must still render.
+        let json = r#"{
+            "id": "9",
+            "type": "moderation_warning",
+            "created_at": "2026-11-07T00:00:00.000Z",
+            "account": {"id": "1", "acct": "alice", "display_name": "Alice"}
+        }"#;
+        let notification: Notification = serde_json::from_str(json).expect("unknown kind parses");
+        assert_eq!(notification.kind, NotificationKind::Unknown);
+    }
 
     #[test]
     fn status_deserialises_a_trimmed_instance_payload() {
