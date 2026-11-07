@@ -1,6 +1,6 @@
 //! The SDK itself: one generic state machine over four ports.
 
-use std::time::Instant;
+use web_time::Instant;
 
 use nodus_instance_api::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};

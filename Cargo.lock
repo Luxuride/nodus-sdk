@@ -647,12 +647,14 @@ dependencies = [
 name = "nodus-runtime"
 version = "0.1.0"
 dependencies = [
+ "js-sys",
  "nodus-instance-api",
  "nodus-persist",
  "nodus-shared",
  "nodus-state",
  "serde_json",
  "thiserror 2.0.21",
+ "web-time",
 ]
 
 [[package]]

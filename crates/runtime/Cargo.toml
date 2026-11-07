@@ -15,6 +15,12 @@ nodus-shared = { workspace = true }
 nodus-state = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+# `std::time::Instant` panics on `wasm32-unknown-unknown`; `web-time` reads
+# `performance.now()` there and is a plain re-export of `std` elsewhere.
+web-time = "1.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"
 
 [lints]
 workspace = true

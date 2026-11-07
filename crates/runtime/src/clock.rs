@@ -16,11 +16,33 @@ pub struct SystemClock;
 
 impl Clock for SystemClock {
     fn now_unix_millis(&self) -> i64 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let elapsed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default();
-        i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX)
+        epoch_millis()
+    }
+}
+
+/// Milliseconds since the Unix epoch, on every platform we build for.
+///
+/// Both `SystemTime::now()` and `Instant::now()` panic on `wasm32-unknown-unknown`
+/// ("time not implemented on this platform"): the browser has no `std` clock, only
+/// `Date.now()`. That panic aborts whatever was running, which is how a background
+/// tick died silently on the first real load.
+#[cfg(not(target_arch = "wasm32"))]
+fn epoch_millis() -> i64 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let elapsed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default();
+    i64::try_from(elapsed.as_millis()).unwrap_or(i64::MAX)
+}
+
+#[cfg(target_arch = "wasm32")]
+fn epoch_millis() -> i64 {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "epoch milliseconds fit i64 for the next 292 million years"
+    )]
+    {
+        js_sys::Date::now() as i64
     }
 }
 

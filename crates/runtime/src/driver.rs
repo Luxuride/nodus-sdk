@@ -16,7 +16,9 @@
 //! endpoint would make the third retry wait four times longer than the delay the
 //! retry policy documents.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
+
+use web_time::Instant;
 
 use crate::scheduler::{Budget, Plan, Scheduler, StreamPhase};
 

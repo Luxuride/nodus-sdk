@@ -13,7 +13,9 @@
 //! every command and every stream event in one place, so it can coalesce them.
 //! A burst of user commands would otherwise become one request per command.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
+
+use web_time::Instant;
 
 /// How old a successful timeline read may be before another page is loaded.
 ///
