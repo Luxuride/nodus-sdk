@@ -275,6 +275,15 @@ impl<T: Transport> Browse for RestInstance<T> {
         status_verb_quiet(self, &format!("/api/v1/conversations/{id}/read")).await
     }
 
+    async fn directory(&self, local_only: bool, offset: u32) -> Result<Vec<Account>> {
+        // `order=active` asks for accounts that actually post; the default ordering is
+        // by sign-up date, which surfaces empty profiles.
+        let url = self.url(&format!(
+            "/api/v1/directory?local={local_only}&order=active&offset={offset}&limit=40"
+        ))?;
+        self.fetch(self.get(url)).await
+    }
+
     async fn mute_conversation(&self, id: &str, muted: bool) -> Result<Conversation> {
         let url = self.url(&format!("/api/v1/conversations/{id}/mute"))?;
         let request = if muted { self.post(url) } else { self.delete(url) };
