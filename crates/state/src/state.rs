@@ -5,6 +5,7 @@
 
 use std::collections::HashMap;
 
+use nodus_protocol::Capabilities;
 use nodus_shared::{AccountFeed, AccountItem, PostFeed, PostItem};
 
 use crate::handle::Handle;
@@ -255,6 +256,11 @@ pub struct SyncConsent {
 /// observe one field without re-rendering on unrelated changes.
 #[derive(Debug, Clone)]
 pub struct AppState {
+    /// What this server can do: the answer to `/api/v1/meta`, once per session.
+    ///
+    /// Recorded in state rather than asked at each call site, so a screen can decide
+    /// its path synchronously while it renders instead of negotiating mid-view.
+    pub capabilities: Handle<Capabilities>,
     /// Signed-in account, `None` when signed out.
     pub session: Handle<Option<Session>>,
     /// What the recommendation server holds for this account.
@@ -272,6 +278,7 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
+            capabilities: Handle::new(Capabilities::mastodon()),
             session: Handle::new(None),
             sync: Handle::new(SyncConsent::default()),
             stream: Handle::new(StreamState::Disconnected),

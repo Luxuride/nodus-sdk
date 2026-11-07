@@ -87,6 +87,18 @@ impl Capabilities {
         needed.iter().all(|feature| self.supports(*feature))
     }
 
+    /// Reads the parts of a `/api/v1/meta` answer the SDK already decodes.
+    ///
+    /// The SDK talks to our API through a typed `Meta`, so it never sees the JSON
+    /// document: this is the same negotiation without a serialisation round trip.
+    #[must_use]
+    pub fn from_parts(contract: impl Into<String>, features: &[String]) -> Self {
+        Self {
+            contract: contract.into(),
+            features: features.iter().filter_map(|name| Feature::parse(name)).collect(),
+        }
+    }
+
     /// Reads a `/api/v1/meta` document.
     ///
     /// # Errors

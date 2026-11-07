@@ -11,6 +11,7 @@ repository.workspace = true
 [dependencies]
 nodus-instance = { workspace = true }
 nodus-persist = { workspace = true }
+nodus-protocol = { workspace = true }
 nodus-shared = { workspace = true }
 nodus-state = { workspace = true }
 serde_json = { workspace = true }

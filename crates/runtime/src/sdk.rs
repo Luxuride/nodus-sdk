@@ -4,6 +4,7 @@ use web_time::Instant;
 
 use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
+use nodus_protocol::Capabilities;
 use nodus_shared::{AccountFeed, EventBatch, PostFeed};
 use nodus_state::{
     AppState, Command, Discovery, FeedState, Session, StreamState, SyncConsent, Timeline,
@@ -116,6 +117,9 @@ where
             Command::StreamChanged(stream) => self.state.stream.set(stream),
             Command::SyncChanged(consent) => self.state.sync.set(consent),
             Command::SignedIn(session) => self.state.session.set(Some(session)),
+            Command::CapabilitiesLoaded(capabilities) => {
+                self.state.capabilities.set(capabilities);
+            }
             Command::SignedOut => {
                 // Consent belongs to the account we just forgot.
                 self.state.sync.set(SyncConsent::default());
@@ -356,6 +360,18 @@ where
         };
         self.dispatch(Command::SyncChanged(consent));
         Ok(consent)
+    }
+
+    /// Reads what this server can do and records it.
+    ///
+    /// Called once per session, before the first screen that could use an extension.
+    /// A server that answers nothing usable records the Mastodon surface, so every
+    /// call site has an answer instead of an `Option` it must branch on.
+    pub async fn load_capabilities(&self) -> Result<Capabilities, SdkError<I::Error, D::Error>> {
+        let meta = self.discovery.meta().await.map_err(SdkError::Discovery)?;
+        let capabilities = Capabilities::from_parts(meta.contract, &meta.features);
+        self.dispatch(Command::CapabilitiesLoaded(capabilities.clone()));
+        Ok(capabilities)
     }
 
     /// Warm-starts the home timeline from the cache.

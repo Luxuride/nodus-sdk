@@ -5,6 +5,8 @@
 //! enum instead of spread across components, and makes the transitions testable
 //! without a browser.
 
+use nodus_protocol::Capabilities;
+
 use crate::state::{Session, StreamState, SyncConsent, Timeline, TimelinePage};
 
 /// A change the client wants applied.
@@ -40,6 +42,9 @@ pub enum Command {
 
     /// The server answered what it holds for this account.
     SyncChanged(SyncConsent),
+
+    /// The server described its capabilities (the `/api/v1/meta` answer).
+    CapabilitiesLoaded(Capabilities),
 
     /// A signed-in session was established.
     SignedIn(Session),

@@ -643,6 +643,7 @@ dependencies = [
  "js-sys",
  "nodus-instance",
  "nodus-persist",
+ "nodus-protocol",
  "nodus-shared",
  "nodus-state",
  "serde_json",
@@ -672,6 +673,7 @@ dependencies = [
 name = "nodus-state"
 version = "0.1.0"
 dependencies = [
+ "nodus-protocol",
  "nodus-shared",
  "serde",
 ]
