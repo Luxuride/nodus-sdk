@@ -4,9 +4,12 @@
 //! elsewhere; both are stable, and a client that guessed would fail only for the
 //! moderator — who is exactly the person least able to test an alternative.
 
+use std::fmt::Write as _;
+
 use crate::actions::AdminActions;
 use crate::model::{
-    AdminAccount, Announcement, DomainBlock, DomainSeverity, ModerationAction, Report, ReportState,
+    AdminAccount, AdminMeasure, Announcement, DomainAllow, DomainBlock, DomainSeverity,
+    ModerationAction, Relay, Report, ReportState,
 };
 use crate::rest::{RestInstance, Transport};
 use crate::{Error, Result};
@@ -39,11 +42,7 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         self.fetch(self.get(url)).await
     }
 
-    async fn moderate_account(
-        &self,
-        id: &str,
-        action: ModerationAction,
-    ) -> Result<AdminAccount> {
+    async fn moderate_account(&self, id: &str, action: ModerationAction) -> Result<AdminAccount> {
         let url = self.url(&format!("/api/v1/admin/accounts/{id}/action"))?;
         let form = vec![("type", action.as_str().to_owned())];
         self.fetch(self.post_form(url, &form)).await
@@ -98,6 +97,52 @@ impl<T: Transport> AdminActions for RestInstance<T> {
 
     async fn delete_announcement(&self, id: &str) -> Result<()> {
         let url = self.url(&format!("/api/v1/admin/announcements/{id}"))?;
+        self.fetch(self.delete(url)).await
+    }
+
+    async fn measures(
+        &self,
+        keys: &[&str],
+        start_at: &str,
+        end_at: &str,
+    ) -> Result<Vec<AdminMeasure>> {
+        let mut path = format!("/api/v1/admin/measures?start_at={start_at}&end_at={end_at}");
+        for key in keys {
+            let _ = write!(path, "&keys[]={key}");
+        }
+        let url = self.url(&path)?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn relays(&self) -> Result<Vec<Relay>> {
+        let url = self.url("/api/v1/admin/relays")?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn add_relay(&self, inbox_url: &str) -> Result<Relay> {
+        let url = self.url("/api/v1/admin/relays")?;
+        let form = vec![("inbox_url", inbox_url.to_owned())];
+        self.fetch(self.post_form(url, &form)).await
+    }
+
+    async fn remove_relay(&self, id: &str) -> Result<()> {
+        let url = self.url(&format!("/api/v1/admin/relays/{id}"))?;
+        self.fetch(self.delete(url)).await
+    }
+
+    async fn domain_allows(&self, limit: u16) -> Result<Vec<DomainAllow>> {
+        let url = self.url(&format!("/api/v1/admin/domain_allows?limit={limit}"))?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn create_domain_allow(&self, domain: &str) -> Result<DomainAllow> {
+        let url = self.url("/api/v1/admin/domain_allows")?;
+        let form = vec![("domain", domain.to_owned())];
+        self.fetch(self.post_form(url, &form)).await
+    }
+
+    async fn delete_domain_allow(&self, id: &str) -> Result<()> {
+        let url = self.url(&format!("/api/v1/admin/domain_allows/{id}"))?;
         self.fetch(self.delete(url)).await
     }
 }

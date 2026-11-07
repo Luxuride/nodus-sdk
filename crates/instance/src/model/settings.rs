@@ -73,9 +73,7 @@ impl Announcement {
         if !self.published || self.read == Some(true) {
             return false;
         }
-        self.ends_at
-            .as_ref()
-            .is_none_or(|ends| ends.as_str() > now)
+        self.ends_at.as_ref().is_none_or(|ends| ends.as_str() > now)
     }
 }
 

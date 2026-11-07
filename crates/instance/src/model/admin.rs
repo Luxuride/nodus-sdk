@@ -228,3 +228,44 @@ mod tests {
         assert!(!report.action_taken);
     }
 }
+
+/// One line of the admin dashboard: a count per day, with the previous period beside it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdminMeasure {
+    pub key: String,
+    /// The API sends totals as strings, so they are kept that way rather than parsed.
+    #[serde(default)]
+    pub total: Option<String>,
+    #[serde(default)]
+    pub previous_total: Option<String>,
+    #[serde(default)]
+    pub data: Vec<MeasurePoint>,
+}
+
+/// One day of a measure.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MeasurePoint {
+    #[serde(default)]
+    pub date: String,
+    #[serde(default)]
+    pub value: u64,
+}
+
+/// A relay this instance follows, or asks to follow.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Relay {
+    pub id: String,
+    #[serde(default)]
+    pub state: String,
+    #[serde(default)]
+    pub inbox_url: String,
+}
+
+/// A domain whose federation this instance allows even when it blocks federation
+/// generally.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DomainAllow {
+    pub id: String,
+    #[serde(default)]
+    pub domain: String,
+}

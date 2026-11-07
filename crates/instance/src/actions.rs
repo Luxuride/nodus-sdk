@@ -21,10 +21,10 @@ use core::fmt::Debug;
 use core::future::Future;
 
 use crate::model::{
-    Account, AdminAccount, Announcement, Conversation, DomainBlock, DomainSeverity, Draft,
-    FeaturedTag, Filter, FilterDraft, HistoryEntry, List, LocalId, MediaAttachment,
-    ModerationAction, Page, PageParams, Preferences, Relationship, Report, ReportState, Rule,
-    ScheduledStatus, SearchResults, Status,
+    Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
+    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, List, LocalId,
+    MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay, Report,
+    ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -342,7 +342,10 @@ pub trait AdminActions {
     ) -> impl Future<Output = Result<AdminAccount, Self::Error>>;
 
     /// Domains the instance refuses.
-    fn domain_blocks(&self, limit: u16) -> impl Future<Output = Result<Vec<DomainBlock>, Self::Error>>;
+    fn domain_blocks(
+        &self,
+        limit: u16,
+    ) -> impl Future<Output = Result<Vec<DomainBlock>, Self::Error>>;
 
     /// Refuse a domain.
     fn create_domain_block(
@@ -363,6 +366,28 @@ pub trait AdminActions {
         ends_at: Option<&str>,
     ) -> impl Future<Output = Result<Announcement, Self::Error>>;
     fn delete_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+    /// Dashboard counts for the given keys (`new_users`, `interactions`, …) between two
+    /// dates, both `YYYY-MM-DD`.
+    fn measures(
+        &self,
+        keys: &[&str],
+        start_at: &str,
+        end_at: &str,
+    ) -> impl Future<Output = Result<Vec<AdminMeasure>, Self::Error>>;
+    /// Relays this instance follows.
+    fn relays(&self) -> impl Future<Output = Result<Vec<Relay>, Self::Error>>;
+    fn add_relay(&self, inbox_url: &str) -> impl Future<Output = Result<Relay, Self::Error>>;
+    fn remove_relay(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+    /// Domains allowed through a general block.
+    fn domain_allows(
+        &self,
+        limit: u16,
+    ) -> impl Future<Output = Result<Vec<DomainAllow>, Self::Error>>;
+    fn create_domain_allow(
+        &self,
+        domain: &str,
+    ) -> impl Future<Output = Result<DomainAllow, Self::Error>>;
+    fn delete_domain_allow(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 }
 
 /// What the account asked for, and what the instance wants said.
@@ -392,7 +417,10 @@ pub trait HighlightActions {
     type Error: Debug;
 
     /// The tags an account has put on its profile.
-    fn featured_tags(&self, id: &LocalId) -> impl Future<Output = Result<Vec<FeaturedTag>, Self::Error>>;
+    fn featured_tags(
+        &self,
+        id: &LocalId,
+    ) -> impl Future<Output = Result<Vec<FeaturedTag>, Self::Error>>;
 
     /// Features a tag on the authenticated account's profile.
     fn feature_tag(&self, name: &str) -> impl Future<Output = Result<FeaturedTag, Self::Error>>;

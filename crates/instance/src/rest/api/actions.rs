@@ -286,7 +286,11 @@ impl<T: Transport> Browse for RestInstance<T> {
 
     async fn mute_conversation(&self, id: &str, muted: bool) -> Result<Conversation> {
         let url = self.url(&format!("/api/v1/conversations/{id}/mute"))?;
-        let request = if muted { self.post(url) } else { self.delete(url) };
+        let request = if muted {
+            self.post(url)
+        } else {
+            self.delete(url)
+        };
         self.fetch(request).await
     }
 
