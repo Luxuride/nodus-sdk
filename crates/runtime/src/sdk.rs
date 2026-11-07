@@ -15,6 +15,8 @@ use nodus_state::{
     TimelinePage, TimelineRequest,
 };
 
+use nodus_instance::model::Conversation;
+
 use crate::clock::Clock;
 use crate::driver::Driver;
 use crate::error::SdkError;
@@ -128,6 +130,36 @@ where
     ///
     /// This is the only mutation path. It is synchronous, so a view reacting to a
     /// click can change the UI on the same frame.
+    /// Removes one account from a people page.
+    fn drop_account(&self, kind: &PageKind, account: &str) {
+        self.state.pages.update(|pages| {
+            if let Some(entry) = pages.get_mut(kind) {
+                if let PageItems::Accounts(held) = &mut entry.items {
+                    held.retain(|known| known.id != account);
+                }
+            }
+        });
+    }
+
+    /// Merges muted or read conversations into the stored page.
+    ///
+    /// Kept out of `dispatch` only because that match is already at clippy's line
+    /// limit; the rule is unchanged — dispatch is the single mutation path.
+    fn merge_conversations(&self, items: Vec<Conversation>) {
+        self.state.pages.update(|pages| {
+            if let Some(entry) = pages.get_mut(&PageKind::Conversations) {
+                if let PageItems::Conversations(held) = &mut entry.items {
+                    for item in items {
+                        match held.iter_mut().find(|known| known.id == item.id) {
+                            Some(slot) => *slot = item,
+                            None => held.insert(0, item),
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     pub fn dispatch(&self, command: Command) {
         match command {
             Command::FeedLoaded(feed) => self.state.feed.update(|state| state.replace(feed)),
@@ -172,6 +204,10 @@ where
                 // see exactly one notification.
                 self.state.timelines.set(std::collections::HashMap::new());
             }
+            Command::ConversationsUpserted { items } => self.merge_conversations(items),
+
+            Command::PageAccountDropped { kind, account } => self.drop_account(&kind, &account),
+
             Command::PageStale { kind } => {
                 self.state.pages.update(|pages| {
                     if let Some(entry) = pages.get_mut(&kind) {

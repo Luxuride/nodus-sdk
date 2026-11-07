@@ -5,7 +5,7 @@
 //! enum instead of spread across components, and makes the transitions testable
 //! without a browser.
 
-use nodus_instance::model::{Account, Status};
+use nodus_instance::model::{Conversation, Account, Status};
 use nodus_protocol::Capabilities;
 
 use crate::page::{PageItems, PageKind};
@@ -64,6 +64,17 @@ pub enum Command {
         /// When the instance answered, in Unix milliseconds.
         fetched_at: i64,
     },
+    /// Merge conversations into the stored page, keeping their place.
+    ///
+    /// Muting and reading are answered one conversation at a time; replacing the page
+    /// would drop the rest, and a local copy in the screen would be the second source
+    /// of truth this store exists to remove.
+    ConversationsUpserted { items: Vec<Conversation> },
+    /// Drop one account from a people page.
+    ///
+    /// Unmuting is answered with nothing, so the row has to leave the stored page by
+    /// name; refetching to find out would show the account that was just unmuted.
+    PageAccountDropped { kind: PageKind, account: String },
     /// Marks a page as no longer trustworthy, so the next visit refetches it.
     ///
     /// The items stay: an offline or reconnecting client can still show what it had,
