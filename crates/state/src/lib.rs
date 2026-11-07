@@ -14,11 +14,13 @@
 
 pub mod command;
 pub mod discovery;
+pub mod dwell;
 pub mod handle;
 pub mod state;
 
 pub use command::Command;
 pub use discovery::Discovery;
+pub use dwell::{DwellTracker, MAX_DWELL_MS, MAX_EVENTS_PER_BATCH};
 pub use handle::{Handle, Subscription};
 pub use state::{
     AppState, Degraded, FeedState, PostFeedState, Session, StreamState, Timeline, TimelineKey,

@@ -31,8 +31,9 @@ pub use nodus_runtime::{
     StreamPhase, SystemClock, Unavailable, UnavailableBackend, shell_sdk,
 };
 pub use nodus_state::{
-    AppState, Command, Degraded, Discovery, FeedState, Handle, PostFeedState, Session, StreamState,
-    Subscription, Timeline, TimelineKey, TimelinePage, TimelineRequest,
+    AppState, Command, Degraded, Discovery, DwellTracker, FeedState, Handle, MAX_DWELL_MS,
+    MAX_EVENTS_PER_BATCH, PostFeedState, Session, StreamState, Subscription, Timeline, TimelineKey,
+    TimelinePage, TimelineRequest,
 };
 
 /// The clock port and its system/fixed adapters.
