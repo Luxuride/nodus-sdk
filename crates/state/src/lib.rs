@@ -16,6 +16,7 @@ pub mod command;
 pub mod discovery;
 pub mod dwell;
 pub mod handle;
+pub mod page;
 pub mod state;
 
 pub use command::Command;

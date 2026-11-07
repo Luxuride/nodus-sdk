@@ -10,6 +10,7 @@ use nodus_protocol::Capabilities;
 use nodus_shared::{AccountFeed, AccountItem, PostFeed, PostItem};
 
 use crate::handle::Handle;
+use crate::page::{PageEntry, PageKind};
 
 /// The signed-in account, as far as the client is concerned.
 ///
@@ -313,6 +314,8 @@ pub struct AppState {
     /// therefore favourited in every timeline that shows it, without any screen
     /// copying it, and a `delete` event removes it everywhere at once.
     pub statuses: Handle<HashMap<String, Status>>,
+    /// Non-timeline pages: notifications, messages, saved posts, people, search.
+    pub pages: Handle<HashMap<PageKind, PageEntry>>,
     /// Accounts by id, for the same reason.
     pub accounts: Handle<HashMap<String, Account>>,
 }
@@ -326,6 +329,7 @@ impl Default for AppState {
             stream: Handle::new(StreamState::Disconnected),
             feed: Handle::new(FeedState::default()),
             posts: Handle::new(PostFeedState::default()),
+            pages: Handle::new(HashMap::new()),
             timelines: Handle::new(HashMap::new()),
             statuses: Handle::new(HashMap::new()),
             accounts: Handle::new(HashMap::new()),

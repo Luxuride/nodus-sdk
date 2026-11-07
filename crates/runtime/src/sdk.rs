@@ -3,11 +3,13 @@
 use web_time::Instant;
 
 use nodus_instance::StreamEvent;
+use nodus_instance::actions::{AccountActions, Browse, ScheduleActions, Search};
 use nodus_instance::model::{Account, Status};
 use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_protocol::Capabilities;
 use nodus_shared::{AccountFeed, EventBatch, PostFeed};
+use nodus_state::page::{PageEntry, PageItems, PageKind};
 use nodus_state::{
     AppState, Command, Discovery, FeedState, Session, StreamState, SyncConsent, Timeline,
     TimelinePage, TimelineRequest,
@@ -98,6 +100,30 @@ where
         &self.persistence
     }
 
+    /// Replaces or extends one page. Extending keeps the order a screen already drew.
+    fn store_page(
+        &self,
+        kind: PageKind,
+        items: PageItems,
+        cursor: Option<String>,
+        append: bool,
+        fetched_at: i64,
+    ) {
+        self.state.pages.update(|pages| {
+            let entry = pages.entry(kind).or_default();
+            let older = PageEntry {
+                items,
+                cursor,
+                fetched_at: Some(fetched_at),
+            };
+            if append && entry.items.same_shape(&older.items) {
+                entry.append(older);
+            } else {
+                *entry = older;
+            }
+        });
+    }
+
     /// Applies a pure state change and notifies subscribers.
     ///
     /// This is the only mutation path. It is synchronous, so a view reacting to a
@@ -116,7 +142,21 @@ where
                     state.replace(feed);
                 }
             }),
-            Command::StreamChanged(stream) => self.state.stream.set(stream),
+            Command::StreamChanged(stream) => {
+                // Reconnecting means events were missed, not that the pages are wrong: the
+                // items stay readable and stop claiming to be current, so the next visit
+                // refetches instead of showing a hole where a notification should be.
+                if stream == StreamState::Connected {
+                    self.state.pages.update(|pages| {
+                        for kind in [PageKind::Notifications, PageKind::Conversations] {
+                            if let Some(entry) = pages.get_mut(&kind) {
+                                entry.fetched_at = None;
+                            }
+                        }
+                    });
+                }
+                self.state.stream.set(stream);
+            }
             Command::SyncChanged(consent) => self.state.sync.set(Some(consent)),
             Command::SignedIn(session) => self.state.session.set(Some(session)),
             Command::CapabilitiesLoaded(capabilities) => {
@@ -132,6 +172,22 @@ where
                 // see exactly one notification.
                 self.state.timelines.set(std::collections::HashMap::new());
             }
+            Command::PageStale { kind } => {
+                self.state.pages.update(|pages| {
+                    if let Some(entry) = pages.get_mut(&kind) {
+                        entry.fetched_at = None;
+                    }
+                });
+            }
+
+            Command::PageLoaded {
+                kind,
+                items,
+                cursor,
+                append,
+                fetched_at,
+            } => self.store_page(kind, items, cursor, append, fetched_at),
+
             Command::TimelineLoaded {
                 which,
                 tag,
@@ -643,6 +699,157 @@ const fn stream_kind(request: &TimelineRequest<'_>) -> StreamKind {
         }
         TimelineRequest::Local => StreamKind::Local,
         TimelineRequest::Federated => StreamKind::Federated,
+    }
+}
+
+
+impl<I, D, P, C> Sdk<I, D, P, C>
+where
+    // Every action trait reports through the instance's own error: one error type per
+    // transport, so a caller matches on `SdkError` rather than on four failure shapes.
+    I: InstanceApi
+        + Browse<Error = <I as InstanceApi>::Error>
+        + AccountActions<Error = <I as InstanceApi>::Error>
+        + Search<Error = <I as InstanceApi>::Error>
+        + ScheduleActions<Error = <I as InstanceApi>::Error>,
+    D: Discovery,
+    P: Persistence,
+    C: Clock,
+{
+    /// A stored page, as the last fetch left it.
+    #[must_use]
+    pub fn page(&self, kind: &PageKind) -> Option<PageEntry> {
+        self.state.pages.with(|pages| pages.get(kind).cloned())
+    }
+
+    /// Loads a page unless the one held answers the question.
+    ///
+    /// Returns whether the instance was asked. An older page is only *appended* when the
+    /// cursor asked for is the cursor the held page ended on: after an offline spell the
+    /// instance's ordering may have moved, and appending across the gap would splice two
+    /// ranges together with a hole in the middle.
+    pub async fn ensure_page(
+        &self,
+        kind: PageKind,
+        cursor: Option<&str>,
+        limit: u16,
+        ttl_ms: i64,
+    ) -> Result<bool, SdkError<<I as InstanceApi>::Error, D::Error>> {
+        let now = self.clock.now_unix_millis();
+        let held = self.page(&kind);
+        let continued = match (&held, cursor) {
+            (Some(entry), Some(cursor)) => entry.cursor.as_deref() == Some(cursor),
+            _ => false,
+        };
+        if cursor.is_none()
+            && held
+                .as_ref()
+                .is_some_and(|entry| entry.is_fresh(now, ttl_ms) && entry.items != PageItems::Empty)
+        {
+            return Ok(false);
+        }
+
+        let params = match cursor {
+            Some(cursor) => PageParams::after(cursor, limit),
+            None => PageParams::first(limit),
+        };
+        let (items, next) = self.fetch_page_items(&kind, params).await?;
+        self.absorb(&items);
+        self.dispatch(Command::PageLoaded {
+            kind,
+            items,
+            cursor: next,
+            append: continued,
+            fetched_at: now,
+        });
+        Ok(true)
+    }
+
+    /// One request per page kind; the shape of the answer decides the variant.
+    async fn fetch_page_items(
+        &self,
+        kind: &PageKind,
+        params: PageParams,
+    ) -> Result<(PageItems, Option<String>), SdkError<<I as InstanceApi>::Error, D::Error>> {
+        let answer = match kind {
+            PageKind::Notifications => {
+                let page = self.instance.notifications(params).await.map_err(SdkError::Instance)?;
+                (PageItems::Notifications(page.items), page.next_max_id)
+            }
+            PageKind::Conversations => {
+                let page = self.instance.conversations(params).await.map_err(SdkError::Instance)?;
+                (PageItems::Conversations(page.items), page.next_max_id)
+            }
+            PageKind::Favourites => {
+                let page = self.instance.favourites(params).await.map_err(SdkError::Instance)?;
+                (PageItems::Statuses(page.items), page.next_max_id)
+            }
+            PageKind::Bookmarks => {
+                let page = self.instance.bookmarks(params).await.map_err(SdkError::Instance)?;
+                (PageItems::Statuses(page.items), page.next_max_id)
+            }
+            PageKind::Followers(id) => {
+                let page = self
+                    .instance
+                    .followers(&nodus_instance::LocalId(id.clone()), params)
+                    .await
+                    .map_err(SdkError::Instance)?;
+                (PageItems::Accounts(page.items), page.next_max_id)
+            }
+            PageKind::Following(id) => {
+                let page = self
+                    .instance
+                    .following(&nodus_instance::LocalId(id.clone()), params)
+                    .await
+                    .map_err(SdkError::Instance)?;
+                (PageItems::Accounts(page.items), page.next_max_id)
+            }
+            PageKind::Mutes => {
+                let page = self.instance.mutes(params).await.map_err(SdkError::Instance)?;
+                (PageItems::Accounts(page.items), page.next_max_id)
+            }
+            PageKind::Blocks => {
+                let page = self.instance.blocks(params).await.map_err(SdkError::Instance)?;
+                (PageItems::Accounts(page.items), page.next_max_id)
+            }
+            PageKind::Scheduled => {
+                let items = self.instance.scheduled().await.map_err(SdkError::Instance)?;
+                (PageItems::Scheduled(items), None)
+            }
+            PageKind::Search(query) => {
+                let results = self
+                    .instance
+                    .search(query, false)
+                    .await
+                    .map_err(SdkError::Instance)?;
+                (PageItems::Search(Box::new(results)), None)
+            }
+        };
+        Ok(answer)
+    }
+
+    /// Copies the statuses and accounts a page brought into the entity store.
+    ///
+    /// A search result and a follower list then show the same status the timeline shows,
+    /// with the same favourite count, instead of a second copy taken at another moment.
+    fn absorb(&self, items: &PageItems) {
+        match items {
+            PageItems::Statuses(statuses) => self.dispatch(Command::StatusesUpserted {
+                statuses: statuses.clone(),
+            }),
+            PageItems::Accounts(accounts) => self.dispatch(Command::AccountsUpserted {
+                accounts: accounts.clone(),
+            }),
+            PageItems::Search(results) => {
+                self.dispatch(Command::StatusesUpserted {
+                    statuses: results.statuses.clone(),
+                });
+                self.dispatch(Command::AccountsUpserted {
+                    accounts: results.accounts.clone(),
+                });
+            }
+            PageItems::Empty | PageItems::Notifications(_) | PageItems::Conversations(_) | PageItems::Scheduled(_) => {}
+        }
     }
 }
 

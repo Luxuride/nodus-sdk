@@ -78,7 +78,10 @@ pub struct AdminAccount {
     pub suspended: bool,
     #[serde(default)]
     pub disabled: bool,
-    #[serde(default)]
+    /// Missing means the server has no approval concept at all (before Mastodon 4.0),
+    /// which reads as approved — defaulting to `false` would show every account as
+    /// pending on those servers.
+    #[serde(default = "approved_by_default")]
     pub approved: bool,
     #[serde(default)]
     pub created_at: String,
@@ -103,6 +106,11 @@ impl AdminAccount {
             "unconfirmed"
         }
     }
+}
+
+/// The default for a field an older server does not send.
+const fn approved_by_default() -> bool {
+    true
 }
 
 /// What a moderator decided about an account.

@@ -36,6 +36,11 @@ pub use nodus_state::{
     TimelinePage, TimelineRequest,
 };
 
+/// Pages other than timelines: notifications, messages, saved posts, people, search.
+pub mod page {
+    pub use nodus_state::page::*;
+}
+
 /// The clock port and its system/fixed adapters.
 pub mod clock {
     pub use nodus_runtime::clock::*;

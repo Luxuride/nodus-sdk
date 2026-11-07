@@ -8,6 +8,7 @@
 use nodus_instance::model::{Account, Status};
 use nodus_protocol::Capabilities;
 
+use crate::page::{PageItems, PageKind};
 use crate::state::{Session, StreamState, SyncConsent, Timeline, TimelinePage};
 
 /// A change the client wants applied.
@@ -54,6 +55,20 @@ pub enum Command {
     SignedOut,
 
     /// A timeline page arrived.
+    /// A page arrived from the instance: notifications, messages, people, saved, search.
+    PageLoaded {
+        kind: PageKind,
+        items: PageItems,
+        cursor: Option<String>,
+        append: bool,
+        /// When the instance answered, in Unix milliseconds.
+        fetched_at: i64,
+    },
+    /// Marks a page as no longer trustworthy, so the next visit refetches it.
+    ///
+    /// The items stay: an offline or reconnecting client can still show what it had,
+    /// it just cannot claim the page is current.
+    PageStale { kind: PageKind },
     TimelineLoaded {
         /// Which timeline.
         which: Timeline,
