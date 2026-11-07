@@ -91,7 +91,10 @@ impl Capabilities {
     pub fn from_parts(contract: impl Into<String>, features: &[String]) -> Self {
         Self {
             contract: contract.into(),
-            features: features.iter().filter_map(|name| Feature::parse(name)).collect(),
+            features: features
+                .iter()
+                .filter_map(|name| Feature::parse(name))
+                .collect(),
         }
     }
 

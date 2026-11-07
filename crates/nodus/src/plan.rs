@@ -33,11 +33,7 @@ impl Need {
     /// Everything this build of the protocol offers.
     #[must_use]
     pub fn everything() -> Self {
-        Self::none()
-            .feed_accounts()
-            .events()
-            .sync_token()
-            .batch()
+        Self::none().feed_accounts().events().sync_token().batch()
     }
 
     fn with(mut self, feature: Feature) -> Self {

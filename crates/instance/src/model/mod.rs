@@ -235,6 +235,10 @@ pub struct Notification {
 
 /// Relationship between the signed-in account and another account.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "the wire has independent flags and a DTO must mirror it"
+)]
 pub struct Relationship {
     /// The other account.
     pub id: LocalId,
@@ -244,6 +248,24 @@ pub struct Relationship {
     pub requested: bool,
     /// Followed by them?
     pub followed_by: bool,
+    /// Blocking them?
+    #[serde(default)]
+    pub blocking: bool,
+    /// Blocked by them?
+    #[serde(default)]
+    pub blocked_by: bool,
+    /// Muting them?
+    #[serde(default)]
+    pub muting: bool,
+    /// Muting their notifications only?
+    #[serde(default)]
+    pub muting_notifications: bool,
+    /// Is the whole domain blocked?
+    #[serde(default)]
+    pub domain_blocking: bool,
+    /// Recommended by an admin?
+    #[serde(default)]
+    pub endorsed: bool,
 }
 
 /// An instance-local id, stringified for wire compatibility.

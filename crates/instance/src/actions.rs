@@ -11,6 +11,11 @@
 //! Every method returns the object the instance returns, not `()`, because the client
 //! renders the answer: an optimistic update followed by a silent failure is worse than
 //! not updating at all.
+//!
+//! Follow, unfollow and delete already exist on
+//! [`InstanceApi`](crate::api::InstanceApi) — they predate this split because the
+//! recommender's sync worker needs them — so they are deliberately absent here. Two
+//! traits declaring one method would make every call site ambiguous.
 
 use core::fmt::Debug;
 use core::future::Future;
@@ -49,9 +54,6 @@ pub trait StatusActions {
     /// Unpins it.
     fn unpin(&self, id: &str) -> impl Future<Output = Result<Status, Self::Error>>;
 
-    /// Deletes a status the account owns.
-    fn delete_status(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
-
     /// Edits a status, keeping its id and adding a revision.
     fn edit_status(
         &self,
@@ -60,8 +62,11 @@ pub trait StatusActions {
     ) -> impl Future<Output = Result<Status, Self::Error>>;
 
     /// Votes on an attached poll.
-    fn vote(&self, poll_id: &str, choices: &[usize])
-    -> impl Future<Output = Result<Status, Self::Error>>;
+    fn vote(
+        &self,
+        poll_id: &str,
+        choices: &[usize],
+    ) -> impl Future<Output = Result<Status, Self::Error>>;
 
     /// The edit history, oldest first.
     fn history(&self, id: &str) -> impl Future<Output = Result<Vec<HistoryEntry>, Self::Error>>;
@@ -85,12 +90,6 @@ pub trait StatusActions {
 pub trait AccountActions {
     /// Error type of the transport.
     type Error: Debug;
-
-    /// Follows, returning the resulting relationship.
-    fn follow(&self, id: &LocalId) -> impl Future<Output = Result<Relationship, Self::Error>>;
-
-    /// Unfollows.
-    fn unfollow(&self, id: &LocalId) -> impl Future<Output = Result<Relationship, Self::Error>>;
 
     /// Blocks: no follows in either direction, no mentions.
     fn block(&self, id: &LocalId) -> impl Future<Output = Result<Relationship, Self::Error>>;
@@ -134,12 +133,16 @@ pub trait Browse {
     type Error: Debug;
 
     /// Statuses the account favourited, newest first.
-    fn favourites(&self, params: PageParams)
-    -> impl Future<Output = Result<Page<Status>, Self::Error>>;
+    fn favourites(
+        &self,
+        params: PageParams,
+    ) -> impl Future<Output = Result<Page<Status>, Self::Error>>;
 
     /// Statuses the account bookmarked, newest first.
-    fn bookmarks(&self, params: PageParams)
-    -> impl Future<Output = Result<Page<Status>, Self::Error>>;
+    fn bookmarks(
+        &self,
+        params: PageParams,
+    ) -> impl Future<Output = Result<Page<Status>, Self::Error>>;
 
     /// Direct-message threads, newest first.
     fn conversations(
@@ -148,10 +151,7 @@ pub trait Browse {
     ) -> impl Future<Output = Result<Page<Conversation>, Self::Error>>;
 
     /// Marks a conversation as read.
-    fn mark_conversation_read(
-        &self,
-        id: &str,
-    ) -> impl Future<Output = Result<(), Self::Error>>;
+    fn mark_conversation_read(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 
     /// The account's lists.
     fn lists(&self) -> impl Future<Output = Result<Vec<List>, Self::Error>>;
@@ -160,7 +160,8 @@ pub trait Browse {
     fn create_list(&self, title: &str) -> impl Future<Output = Result<List, Self::Error>>;
 
     /// Renames a list.
-    fn rename_list(&self, id: &str, title: &str) -> impl Future<Output = Result<List, Self::Error>>;
+    fn rename_list(&self, id: &str, title: &str)
+    -> impl Future<Output = Result<List, Self::Error>>;
 
     /// Deletes a list; its members stay followed.
     fn delete_list(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;

@@ -1,5 +1,7 @@
 //! `InstanceApi` for every transport, written once.
 
+mod actions;
+
 use crate::api::InstanceApi;
 use crate::model::{
     Account, Context, Draft, LocalId, Notification, Page, PageParams, Relationship, Status,

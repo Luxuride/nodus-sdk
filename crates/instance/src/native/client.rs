@@ -12,8 +12,7 @@ use crate::{Error, Instance, Result};
 ///
 /// `reqwest::Client` is reference-counted internally, so cloning this is cheap
 /// and the connection pool is process-wide.
-#[derive(Clone)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ReqwestTransport {
     http: Client,
 }

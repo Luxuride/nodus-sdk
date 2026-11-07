@@ -60,17 +60,11 @@ impl<T: Transport> StatusActions for RestInstance<T> {
         status_verb(self, &format!("/api/v1/statuses/{id}/unpin")).await
     }
 
-    async fn delete_status(&self, id: &str) -> Result<()> {
-        let url = self.url(&format!("/api/v1/statuses/{id}"))?;
-        let _: Status = self.fetch(self.delete(url)).await?;
-        Ok(())
-    }
-
     async fn edit_status(&self, id: &str, draft: &Draft) -> Result<Status> {
         let url = self.url(&format!("/api/v1/statuses/{id}"))?;
         let form = [
             ("status", draft.text.clone()),
-            ("visibility", draft.visibility.to_string()),
+            ("visibility", draft.visibility.as_str().to_owned()),
         ];
         self.fetch(self.put_form(url, &form)).await
     }
@@ -91,7 +85,11 @@ impl<T: Transport> StatusActions for RestInstance<T> {
         self.fetch(self.get(url)).await
     }
 
-    async fn reblogged_by(&self, id: &str, params: PageParams) -> Result<Page<crate::model::Account>> {
+    async fn reblogged_by(
+        &self,
+        id: &str,
+        params: PageParams,
+    ) -> Result<Page<crate::model::Account>> {
         let url = self.page_url(&format!("/api/v1/statuses/{id}/reblogged_by"), &params)?;
         self.fetch_page(self.get(url), &params).await
     }
@@ -108,14 +106,6 @@ impl<T: Transport> StatusActions for RestInstance<T> {
 
 impl<T: Transport> AccountActions for RestInstance<T> {
     type Error = Error;
-
-    async fn follow(&self, id: &LocalId) -> Result<Relationship> {
-        self.account_verb(&id.0, "follow").await
-    }
-
-    async fn unfollow(&self, id: &LocalId) -> Result<Relationship> {
-        self.account_verb(&id.0, "unfollow").await
-    }
 
     async fn block(&self, id: &LocalId) -> Result<Relationship> {
         self.account_verb(&id.0, "block").await
@@ -144,12 +134,20 @@ impl<T: Transport> AccountActions for RestInstance<T> {
         self.fetch(self.get(url)).await
     }
 
-    async fn followers(&self, id: &LocalId, params: PageParams) -> Result<Page<crate::model::Account>> {
+    async fn followers(
+        &self,
+        id: &LocalId,
+        params: PageParams,
+    ) -> Result<Page<crate::model::Account>> {
         let url = self.page_url(&format!("/api/v1/accounts/{}/followers", id.0), &params)?;
         self.fetch_page(self.get(url), &params).await
     }
 
-    async fn following(&self, id: &LocalId, params: PageParams) -> Result<Page<crate::model::Account>> {
+    async fn following(
+        &self,
+        id: &LocalId,
+        params: PageParams,
+    ) -> Result<Page<crate::model::Account>> {
         let url = self.page_url(&format!("/api/v1/accounts/{}/following", id.0), &params)?;
         self.fetch_page(self.get(url), &params).await
     }
