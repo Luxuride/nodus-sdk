@@ -159,6 +159,15 @@ pub trait AccountActions {
         id: &LocalId,
         params: PageParams,
     ) -> impl Future<Output = Result<Page<Account>, Self::Error>>;
+
+    /// Changes the signed-in account's own profile.
+    ///
+    /// Answers the account as the instance now holds it, so the caller renders the
+    /// sanitised result rather than the text it sent.
+    fn update_profile(
+        &self,
+        update: &crate::model::ProfileUpdate,
+    ) -> impl Future<Output = Result<Account, Self::Error>>;
 }
 
 /// The collections a client lists: favourites, bookmarks, conversations, lists.

@@ -165,6 +165,21 @@ impl<T: Transport> AccountActions for RestInstance<T> {
         self.fetch_page(self.get(url), &params).await
     }
 
+    async fn update_profile(&self, update: &crate::model::ProfileUpdate) -> Result<Account> {
+        let mut form: Vec<(&str, String)> = Vec::with_capacity(3);
+        if let Some(display_name) = &update.display_name {
+            form.push(("display_name", display_name.clone()));
+        }
+        if let Some(note) = &update.note {
+            form.push(("note", note.clone()));
+        }
+        if let Some(locked) = update.locked {
+            form.push(("locked", locked.to_string()));
+        }
+        let url = self.url("/api/v1/accounts/update_credentials")?;
+        self.fetch(self.patch_form(url, &form)).await
+    }
+
     async fn followers(
         &self,
         id: &LocalId,

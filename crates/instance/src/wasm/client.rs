@@ -84,6 +84,7 @@ impl Transport for GlooTransport {
             Method::Get => Request::get(url.as_str()),
             Method::Post => Request::post(url.as_str()),
             Method::Put => Request::put(url.as_str()),
+            Method::Patch => Request::patch(url.as_str()),
             Method::Delete => Request::delete(url.as_str()),
         };
         let builder = builder.headers(headers_of(&headers));

@@ -76,6 +76,8 @@ pub enum Method {
     /// resource they address, so `PUT` is the truthful verb rather than a `POST`
     /// with a `_method` override.
     Put,
+    /// Partial update: only the fields sent change.
+    Patch,
     /// Remove.
     Delete,
 }
@@ -88,6 +90,7 @@ impl Method {
             Self::Get => "GET",
             Self::Post => "POST",
             Self::Put => "PUT",
+            Self::Patch => "PATCH",
             Self::Delete => "DELETE",
         }
     }
@@ -248,6 +251,14 @@ impl<T: Transport> RestInstance<T> {
     /// A form-encoded PUT.
     pub fn put_form(&self, url: Url, form: &[(&str, String)]) -> HttpRequest {
         self.request(Method::Put, url, Some(form_body(form)))
+    }
+
+    /// A form-encoded partial update.
+    ///
+    /// `PATCH` rather than `PUT` because the profile is the account's, and a `PUT` that
+    /// omitted a field would be read by some instances as "clear it".
+    pub fn patch_form(&self, url: Url, form: &[(&str, String)]) -> HttpRequest {
+        self.request(Method::Patch, url, Some(form_body(form)))
     }
 
     /// A form-encoded POST.

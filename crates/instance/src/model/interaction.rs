@@ -270,3 +270,62 @@ mod tests {
         assert_eq!(back, poll);
     }
 }
+
+/// What an account may change about its own profile.
+///
+/// Every field is optional and omitted fields are left alone: the wire treats an absent
+/// key as "unchanged", and a client that always sent the whole profile would overwrite a
+/// bio typed in another tab.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ProfileUpdate {
+    /// The display name; an empty string is a real value, not a missing one.
+    pub display_name: Option<String>,
+    /// The bio, as plain text or limited HTML the instance sanitises.
+    pub note: Option<String>,
+    /// Whether new follows need approval.
+    pub locked: Option<bool>,
+    /// Whether the account is marked as automated.
+    pub bot: Option<bool>,
+    /// Whether the account may appear in discovery.
+    pub discoverable: Option<bool>,
+}
+
+impl ProfileUpdate {
+    /// An update that changes nothing, to build on.
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the display name.
+    #[must_use]
+    pub fn display_name(mut self, name: impl Into<String>) -> Self {
+        self.display_name = Some(name.into());
+        self
+    }
+
+    /// Sets the bio.
+    #[must_use]
+    pub fn note(mut self, note: impl Into<String>) -> Self {
+        self.note = Some(note.into());
+        self
+    }
+
+    /// Requires approval for new follows.
+    #[must_use]
+    pub const fn locked(mut self, locked: bool) -> Self {
+        self.locked = Some(locked);
+        self
+    }
+
+    /// Whether the result says anything at all.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.display_name.is_none()
+            && self.note.is_none()
+            && self.locked.is_none()
+            && self.bot.is_none()
+            && self.discoverable.is_none()
+    }
+}
+

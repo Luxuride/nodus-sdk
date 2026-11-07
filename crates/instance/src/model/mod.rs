@@ -10,6 +10,7 @@ mod interaction;
 mod stream;
 
 pub use interaction::{
+    ProfileUpdate,
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
     SearchResults, Tag, TagHistory,
 };
