@@ -1,5 +1,7 @@
 //! The SDK itself: one generic state machine over four ports.
 
+use std::time::Instant;
+
 use nodus_instance_api::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_shared::{AccountFeed, EventBatch, PostFeed};
@@ -9,7 +11,38 @@ use nodus_state::{
 };
 
 use crate::clock::Clock;
+use crate::driver::Driver;
 use crate::error::SdkError;
+
+/// Timeline page size for a background refresh.
+///
+/// Smaller than a manual load: a tick exists to keep the newest page current, and
+/// a user scrolling wants the next page on demand rather than a deeper prefetch
+/// they may never read.
+const TIMELINE_PAGE: u16 = 20;
+
+/// What one background tick did.
+///
+/// Returned instead of an error because a refresh nobody asked for must not raise
+/// a toast: the flags tell the caller what was attempted, and `failed` tells it
+/// whether the cycle is one the driver has already backed off from.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Drive {
+    /// One timeline page was requested.
+    pub timeline: bool,
+    /// One feed page was requested.
+    pub feed: bool,
+    /// At least one of them failed, so the driver recorded a failure.
+    pub failed: bool,
+}
+
+impl Drive {
+    /// Whether the tick did nothing, which is the common case.
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        !self.timeline && !self.feed
+    }
+}
 
 /// Client-side state machine.
 ///
@@ -110,6 +143,49 @@ where
     #[must_use]
     pub fn now_unix_millis(&self) -> i64 {
         self.clock.now_unix_millis()
+    }
+
+    /// Runs whatever the scheduler says is due at `now`, and records the outcome.
+    ///
+    /// This is the body of the background loop: the host only has to call it when
+    /// [`Driver::next_wake`] says to wake, then call it again. Errors are folded
+    /// into the driver's failure count rather than returned, because a refresh the
+    /// user did not ask for must not surface an error; `failed` marks the cycle for
+    /// whoever wants to log it.
+    pub async fn drive(&self, driver: &mut Driver, now: Instant) -> Drive {
+        let plan = driver.plan(now);
+        let signed_in = self.state.session.with(Option::is_some);
+        let mut report = Drive::default();
+
+        if plan.load_timeline && signed_in {
+            report.timeline = true;
+            driver.record_attempt(now);
+            if self
+                .load_timeline(TimelineRequest::Home, None, TIMELINE_PAGE)
+                .await
+                .is_err()
+            {
+                report.failed = true;
+            }
+        }
+
+        if plan.refresh_feed {
+            report.feed = true;
+            driver.record_attempt(now);
+            if self.load_feed(None).await.is_err() {
+                report.failed = true;
+            }
+        }
+
+        if !report.is_empty() {
+            if report.failed {
+                driver.record_failure();
+            } else {
+                driver.record_success(now);
+            }
+        }
+
+        report
     }
 
     /// Validates the token, then stores the session.

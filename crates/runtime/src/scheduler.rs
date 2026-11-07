@@ -95,7 +95,7 @@ impl Scheduler {
 /// The caller updates one field at a time (success, attempt, failure count,
 /// stream phase) and asks for a new plan; keeping this a plain `Copy` struct
 /// means the state machine can snapshot it without borrowing its own state.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Budget {
     /// When a remote read last succeeded, if ever. `None` means nothing has
     /// loaded yet, which every staleness rule treats as stale.

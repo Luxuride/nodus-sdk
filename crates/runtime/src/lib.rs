@@ -21,13 +21,15 @@
 //! leaked, and the fix is to move the concern out rather than gate it.
 
 pub mod clock;
+pub mod driver;
 pub mod error;
 pub mod scheduler;
 pub mod sdk;
 pub mod shell;
 
 pub use clock::{Clock, FixedClock, SystemClock};
+pub use driver::Driver;
 pub use error::SdkError;
 pub use scheduler::{Budget, Plan, Scheduler, StreamPhase};
-pub use sdk::Sdk;
+pub use sdk::{Drive, Sdk};
 pub use shell::{ShellSdk, Unavailable, UnavailableBackend, shell_sdk};
