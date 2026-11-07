@@ -21,6 +21,9 @@ use url::Url;
 use crate::{Error, Result};
 
 const CONTRACT_HEADER: &str = "X-Contract-Version";
+
+/// The Mastodon instance the token belongs to; the service verifies against it.
+const INSTANCE_HEADER: &str = "X-Instance-Host";
 const DEFAULT_FEED_LIMIT: u32 = 50;
 const DEFAULT_RETRY_AFTER_S: u64 = 60;
 
@@ -47,6 +50,7 @@ impl fmt::Debug for Token {
 #[derive(Clone)]
 pub struct BrowserDiscovery {
     base: Url,
+    instance_host: String,
     token: Token,
     contract: String,
 }
@@ -54,12 +58,19 @@ pub struct BrowserDiscovery {
 impl BrowserDiscovery {
     /// Builds a browser client for one API origin and one token.
     #[must_use]
-    pub fn new(base: Url, token: impl Into<String>) -> Self {
+    pub fn new(base: Url, instance_host: impl Into<String>, token: impl Into<String>) -> Self {
         Self {
             base,
+            instance_host: instance_host.into(),
             token: Token(token.into()),
             contract: CONTRACT_VERSION.to_owned(),
         }
+    }
+
+    /// The instance this client's token belongs to.
+    #[must_use]
+    pub fn instance_host(&self) -> &str {
+        &self.instance_host
     }
 
     /// The API origin this client talks to.
@@ -76,6 +87,7 @@ impl BrowserDiscovery {
         let headers = Headers::new();
         headers.set("Authorization", self.authorization().as_str());
         headers.set(CONTRACT_HEADER, self.contract.as_str());
+        headers.set(INSTANCE_HEADER, self.instance_host.as_str());
         headers
     }
 

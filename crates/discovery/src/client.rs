@@ -22,6 +22,14 @@ use url::Url;
 use crate::{Error, Result};
 
 const CONTRACT_HEADER: &str = "X-Contract-Version";
+
+/// The Mastodon instance the token belongs to.
+///
+/// The service verifies a bearer token by asking the instance that issued it, and a
+/// token on its own does not say which instance that was. Sending the host makes the
+/// first call stateless: once the server has seen the token it remembers the mapping
+/// by fingerprint, so this header is a fact about the token, not a routing decision.
+const INSTANCE_HEADER: &str = "X-Instance-Host";
 const DEFAULT_FEED_LIMIT: u32 = 50;
 const DEFAULT_RETRY_AFTER_S: u64 = 60;
 
@@ -53,6 +61,7 @@ impl fmt::Debug for Token {
 #[derive(Clone)]
 pub struct DiscoveryClient {
     base: Url,
+    instance_host: String,
     token: Token,
     contract: String,
     http: Client,
@@ -66,24 +75,36 @@ impl DiscoveryClient {
     /// this constructor infallible. [`Self::with_client`] is the injectable
     /// alternative for callers that need a custom stack.
     #[must_use]
-    pub fn new(base: Url, token: impl Into<String>) -> Self {
+    pub fn new(base: Url, instance_host: impl Into<String>, token: impl Into<String>) -> Self {
         let http = Client::builder()
             .timeout(Duration::from_secs(20))
             .user_agent(concat!("nodus-discovery/", env!("CARGO_PKG_VERSION")))
             .build()
             .unwrap_or_default();
-        Self::with_client(base, token, http)
+        Self::with_client(base, instance_host, token, http)
     }
 
     /// Builds a client around an already configured HTTP stack.
     #[must_use]
-    pub fn with_client(base: Url, token: impl Into<String>, http: Client) -> Self {
+    pub fn with_client(
+        base: Url,
+        instance_host: impl Into<String>,
+        token: impl Into<String>,
+        http: Client,
+    ) -> Self {
         Self {
             base,
+            instance_host: instance_host.into(),
             token: Token(token.into()),
             contract: CONTRACT_VERSION.to_owned(),
             http,
         }
+    }
+
+    /// The instance this client's token belongs to.
+    #[must_use]
+    pub fn instance_host(&self) -> &str {
+        &self.instance_host
     }
 
     /// The API origin this client talks to.
@@ -92,12 +113,13 @@ impl DiscoveryClient {
         &self.base
     }
 
-    /// Adds the two headers every discovery request must carry.
+    /// Adds the three headers every discovery request must carry.
     fn request(&self, method: Method, url: Url) -> RequestBuilder {
         self.http
             .request(method, url)
             .bearer_auth(self.token.expose())
             .header(CONTRACT_HEADER, self.contract.as_str())
+            .header(INSTANCE_HEADER, self.instance_host.as_str())
     }
 
     /// Resolves a path against the base with `Url`'s path-segment writer.
