@@ -27,8 +27,8 @@
 pub use nodus_instance_api::InstanceApi;
 pub use nodus_persist::{CacheKey, MemoryPersistence, Persistence, PersistenceError};
 pub use nodus_runtime::{
-    Clock, FixedClock, Sdk, SdkError, ShellSdk, SystemClock, Unavailable, UnavailableBackend,
-    shell_sdk,
+    Budget, Clock, Drive, Driver, FixedClock, Plan, Scheduler, Sdk, SdkError, ShellSdk,
+    StreamPhase, SystemClock, Unavailable, UnavailableBackend, shell_sdk,
 };
 pub use nodus_state::{
     AppState, Command, Degraded, Discovery, FeedState, Handle, PostFeedState, Session, StreamState,
