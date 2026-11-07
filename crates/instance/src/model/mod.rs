@@ -6,10 +6,14 @@
 //! tooling must agree on them, and a wire change to an instance should be a change
 //! in exactly one place.
 
+mod admin;
 mod filter;
 mod interaction;
 mod stream;
 
+pub use admin::{
+    AdminAccount, DomainBlock, DomainSeverity, ModerationAction, Report, ReportState,
+};
 pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword};
 pub use interaction::{
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,

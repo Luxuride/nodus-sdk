@@ -21,8 +21,9 @@ use core::fmt::Debug;
 use core::future::Future;
 
 use crate::model::{
-    Account, Conversation, Draft, Filter, FilterDraft, HistoryEntry, List, LocalId,
-    MediaAttachment, Page, PageParams, Relationship, SearchResults, Status,
+    Account, AdminAccount, Conversation, DomainBlock, DomainSeverity, Draft, Filter,
+    FilterDraft, HistoryEntry, List, LocalId, MediaAttachment, ModerationAction, Page, PageParams,
+    Relationship, Report, ReportState, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -287,4 +288,54 @@ pub trait FilterActions {
 
     /// Delete a filter and its phrases.
     fn delete_filter(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+}
+
+/// Moderation: the report queue, account standing, blocked domains.
+///
+/// Every call here needs `admin:read` or `admin:write`, so a client must ask before it
+/// renders a screen: an ordinary token gets a 403, and a menu that leads to a 403 is
+/// worse than a menu that is not there.
+pub trait AdminActions {
+    /// Error type of the transport.
+    type Error: Debug;
+
+    /// Reports waiting for a decision, or already decided.
+    fn reports(
+        &self,
+        state: ReportState,
+        limit: u16,
+    ) -> impl Future<Output = Result<Vec<Report>, Self::Error>>;
+
+    /// Mark a report as handled.
+    fn resolve_report(&self, id: &str) -> impl Future<Output = Result<Report, Self::Error>>;
+
+    /// Reopen a handled report.
+    fn reopen_report(&self, id: &str) -> impl Future<Output = Result<Report, Self::Error>>;
+
+    /// Accounts, newest first, optionally only local ones.
+    fn admin_accounts(
+        &self,
+        local: bool,
+        limit: u16,
+    ) -> impl Future<Output = Result<Vec<AdminAccount>, Self::Error>>;
+
+    /// Apply a decision to one account.
+    fn moderate_account(
+        &self,
+        id: &str,
+        action: ModerationAction,
+    ) -> impl Future<Output = Result<AdminAccount, Self::Error>>;
+
+    /// Domains the instance refuses.
+    fn domain_blocks(&self, limit: u16) -> impl Future<Output = Result<Vec<DomainBlock>, Self::Error>>;
+
+    /// Refuse a domain.
+    fn create_domain_block(
+        &self,
+        domain: &str,
+        severity: DomainSeverity,
+    ) -> impl Future<Output = Result<DomainBlock, Self::Error>>;
+
+    /// Stop refusing a domain.
+    fn delete_domain_block(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 }

@@ -1,6 +1,7 @@
 //! `InstanceApi` for every transport, written once.
 
 mod actions;
+mod admin;
 mod filters;
 
 use crate::api::InstanceApi;
