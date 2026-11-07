@@ -285,6 +285,11 @@ where
 
         let page = match &request {
             TimelineRequest::Tag(tag) => self.instance.tag_timeline(tag, params).await,
+            TimelineRequest::Account(id) => {
+                self.instance
+                    .account_statuses(&nodus_instance::LocalId(id.to_string()), params)
+                    .await
+            }
             other => self.instance.timeline(stream_kind(other), params).await,
         }
         .map_err(SdkError::Instance)?;
@@ -556,7 +561,11 @@ where
 
 const fn stream_kind(request: &TimelineRequest<'_>) -> StreamKind {
     match request {
-        TimelineRequest::Home | TimelineRequest::Tag(_) => StreamKind::User,
+        // An account timeline is fetched through `account_statuses`, never through
+        // the streaming stream kind; the arm exists to keep the match total.
+        TimelineRequest::Home | TimelineRequest::Tag(_) | TimelineRequest::Account(_) => {
+            StreamKind::User
+        }
         TimelineRequest::Local => StreamKind::Local,
         TimelineRequest::Federated => StreamKind::Federated,
     }

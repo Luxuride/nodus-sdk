@@ -46,7 +46,7 @@ pub enum StreamState {
 }
 
 /// A timeline the client can display.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum Timeline {
     /// Home timeline of the signed-in account.
     Home,
@@ -56,6 +56,11 @@ pub enum Timeline {
     Federated,
     /// A hashtag timeline; the tag is the key's second element.
     Tag,
+    /// An account's posts, by account id.
+    ///
+    /// A profile's posts are a timeline like any other: caching them under the same
+    /// mechanism is what lets a profile paint from state on a second visit.
+    Account(String),
 }
 
 /// A timeline the client was asked to load.
@@ -72,6 +77,8 @@ pub enum TimelineRequest<'a> {
     Federated,
     /// A hashtag timeline.
     Tag(&'a str),
+    /// One account's posts.
+    Account(&'a str),
 }
 
 impl TimelineRequest<'_> {
@@ -83,6 +90,7 @@ impl TimelineRequest<'_> {
             Self::Local => (Timeline::Local, None),
             Self::Federated => (Timeline::Federated, None),
             Self::Tag(tag) => (Timeline::Tag, Some((*tag).to_owned())),
+            Self::Account(id) => (Timeline::Account((*id).to_owned()), None),
         }
     }
 }
