@@ -6,7 +6,7 @@
 
 use crate::actions::{AccountActions, Browse, Search, StatusActions};
 use crate::model::{
-    Conversation, Draft, HistoryEntry, List, LocalId, Page, PageParams, Relationship,
+    Account, Conversation, Draft, HistoryEntry, List, LocalId, Page, PageParams, Relationship,
     SearchResults, Status,
 };
 use crate::rest::{RestInstance, Transport};
@@ -212,6 +212,16 @@ impl<T: Transport> Browse for RestInstance<T> {
 
     async fn remove_from_list(&self, list_id: &str, accounts: &[LocalId]) -> Result<()> {
         self.list_members(list_id, accounts, false).await
+    }
+
+    async fn list_accounts(&self, list_id: &str) -> Result<Vec<Account>> {
+        let url = self.url(&format!("/api/v1/lists/{list_id}/accounts"))?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn list_timeline(&self, list_id: &str, params: PageParams) -> Result<Page<Status>> {
+        let url = self.page_url(&format!("/api/v1/timelines/list/{list_id}"), &params)?;
+        self.fetch_page(self.get(url), &params).await
     }
 }
 

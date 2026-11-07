@@ -179,6 +179,25 @@ pub trait Browse {
         list_id: &str,
         accounts: &[LocalId],
     ) -> impl Future<Output = Result<(), Self::Error>>;
+
+    /// The accounts on a list.
+    ///
+    /// Mastodon returns the whole membership, not a page: a list is a hand-picked set
+    /// of people, and the client needs all of them to answer "is this account on it".
+    fn list_accounts(
+        &self,
+        list_id: &str,
+    ) -> impl Future<Output = Result<Vec<Account>, Self::Error>>;
+
+    /// A list's timeline.
+    ///
+    /// Same cursor rules as the other timelines — a full page is what produces the next
+    /// id — because it is the same endpoint shape and the same UI below it.
+    fn list_timeline(
+        &self,
+        list_id: &str,
+        params: PageParams,
+    ) -> impl Future<Output = Result<Page<Status>, Self::Error>>;
 }
 
 /// Searching the instance and, when `resolve` is set, the fediverse.
