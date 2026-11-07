@@ -6,13 +6,14 @@
 //! tooling must agree on them, and a wire change to an instance should be a change
 //! in exactly one place.
 
+mod filter;
 mod interaction;
 mod stream;
 
+pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword};
 pub use interaction::{
-    ProfileUpdate,
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
-    SearchResults, Tag, TagHistory,
+    ProfileUpdate, SearchResults, Tag, TagHistory,
 };
 pub use stream::StreamEvent;
 

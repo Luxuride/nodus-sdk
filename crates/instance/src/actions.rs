@@ -21,8 +21,8 @@ use core::fmt::Debug;
 use core::future::Future;
 
 use crate::model::{
-    Account, Conversation, Draft, HistoryEntry, List, LocalId, MediaAttachment, Page, PageParams,
-    Relationship, SearchResults, Status,
+    Account, Conversation, Draft, Filter, FilterDraft, HistoryEntry, List, LocalId,
+    MediaAttachment, Page, PageParams, Relationship, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -258,4 +258,33 @@ pub trait Search {
         query: &str,
         resolve: bool,
     ) -> impl Future<Output = Result<SearchResults, Self::Error>>;
+}
+
+/// The reader's own filters.
+///
+/// A filter is not a status action: it changes what a *timeline* shows, and the server
+/// already applies it. This surface exists so the client can edit the list and, for a
+/// thread assembled from cached statuses, apply the same rule itself.
+pub trait FilterActions {
+    /// Error type of the transport.
+    type Error: Debug;
+
+    /// Every filter this account keeps.
+    fn filters(&self) -> impl Future<Output = Result<Vec<Filter>, Self::Error>>;
+
+    /// Create a filter.
+    fn create_filter(
+        &self,
+        draft: &FilterDraft,
+    ) -> impl Future<Output = Result<Filter, Self::Error>>;
+
+    /// Replace a filter's settings and phrases.
+    fn update_filter(
+        &self,
+        id: &str,
+        draft: &FilterDraft,
+    ) -> impl Future<Output = Result<Filter, Self::Error>>;
+
+    /// Delete a filter and its phrases.
+    fn delete_filter(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 }

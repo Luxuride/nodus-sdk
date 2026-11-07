@@ -328,4 +328,3 @@ impl ProfileUpdate {
             && self.discoverable.is_none()
     }
 }
-
