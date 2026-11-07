@@ -202,9 +202,11 @@ Time is a dependency because every interesting client rule is time-shaped: cache
 soft-expiry, streaming backoff, feed staleness, and the ordering of "N new posts".
 Taking it from a trait means those rules are tested by advancing a `FixedClock`
 instead of sleeping, which is the difference between a suite that runs in
-milliseconds and one that flakes under load. Nothing in the state machine reads it
-yet — `Sdk::now_unix_millis` exists and has no caller in M0 — so treat the timing
-rules above as the contract this port is for, landing with the transports in M1.
+milliseconds and one that flakes under load. `Sdk::now_unix_millis` is the only
+reader today; the scheduling rules live in `crates/runtime`'s `Scheduler`, which is a
+pure function of `(now: Instant, budget: Budget)` and therefore needs no port at all
+— that is the cheaper shape whenever the decision can be expressed without reading a
+stored timestamp.
 
 A wrong implementation is silent in the expensive direction. A clock frozen in the
 past makes every stored entry look fresh forever, so expired pages are served
@@ -215,6 +217,25 @@ cached value is *ignored*, never what it contains. The one place a wrong clock
 escapes into the wire format is `InteractionEvent::client_ts`, which is RFC 3339 —
 and this port only reports epoch milliseconds, so the caller formats it and owns the
 conversion.
+
+## The scheduler is not a port
+
+`Scheduler::plan(now, &Budget) -> Plan` answers four questions at once: is the
+timeline stale, is the feed stale, when is the next retry due, when is the next
+reconnect due. It takes `std::time::Instant` and a plain `Copy` budget, returns a
+plain `Copy` plan, and performs no I/O — which is why it did not need a fifth port.
+The only reason to promote it later is if a rule needs the stored `Clock` (a cached
+`expires_at` compared against real time); until then the caller passes `Instant`.
+
+Two of its constants encode decisions rather than durations. `FEED_STALE` (10 min) is
+twice `TIMELINE_STALE` because the server reuses a recent snapshot: refreshing sooner
+would spend a request to receive the snapshot it just served. `MIN_ATTEMPT_GAP` (1 s)
+exists so a burst of user commands collapses into one load — the caller keeps the
+last intent, not the last ten.
+
+On `wasm` a `Plan` is a hint. Timers are throttled in background tabs and dropped in
+a sleeping one, so the caller wakes late, re-plans, and acts on the elapsed time
+rather than the planned one; the plan is cheap precisely so that this is safe.
 
 ## Two rules the boundary enforces
 
