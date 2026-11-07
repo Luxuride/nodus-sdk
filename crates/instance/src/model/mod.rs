@@ -7,11 +7,13 @@
 //! in exactly one place.
 
 mod interaction;
+mod stream;
 
 pub use interaction::{
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
     SearchResults, Tag, TagHistory,
 };
+pub use stream::StreamEvent;
 
 use serde::{Deserialize, Serialize};
 

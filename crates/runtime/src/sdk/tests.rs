@@ -332,3 +332,55 @@ fn an_older_page_is_appended_not_substituted() {
         .collect();
     assert_eq!(ids, vec!["1".to_owned(), "2".to_owned(), "3".to_owned()]);
 }
+
+/// An `update` frame makes its status readable without any request.
+#[test]
+fn an_update_event_lands_in_the_entity_store() {
+    let sdk = Sdk::new(
+        Pages::of(vec![]),
+        Consented(SyncConsent::default()),
+        MemoryPersistence::new(),
+        FixedClock::at(1_000),
+    );
+    let frame = serde_json::json!({
+        "event": "update",
+        "payload": serde_json::to_string(&status("7")).expect("a status serialises"),
+    })
+    .to_string();
+
+    assert!(sdk.apply_frame(&frame), "an update changes state");
+    assert!(
+        sdk.read_status("7").is_some(),
+        "the status is held by id, so any page can render it"
+    );
+}
+
+/// A `delete` frame removes the status and its id from every held page.
+#[test]
+fn a_delete_event_leaves_no_hole_in_a_page() {
+    let instance = Pages::of(vec![vec!["1", "2"]]);
+    let sdk = Sdk::new(
+        instance,
+        Consented(SyncConsent::default()),
+        MemoryPersistence::new(),
+        FixedClock::at(1_000),
+    );
+    let request = TimelineRequest::Home;
+    block_on(sdk.ensure_timeline(request.clone(), None, 20, 60_000)).expect("a page arrives");
+
+    let frame = serde_json::json!({"event": "delete", "payload": "1"}).to_string();
+    assert!(
+        sdk.apply_frame(&frame),
+        "a delete of a held status changes state"
+    );
+
+    let (statuses, _) = sdk.read_timeline(&request);
+    assert_eq!(
+        statuses
+            .iter()
+            .map(|status| status.id.clone())
+            .collect::<Vec<_>>(),
+        vec!["2".to_owned()],
+        "the deleted id leaves the page rather than rendering as a hole",
+    );
+}

@@ -2,6 +2,7 @@
 
 use web_time::Instant;
 
+use nodus_instance::StreamEvent;
 use nodus_instance::model::{Account, Status};
 use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
@@ -159,6 +160,16 @@ where
                 self.state.accounts.update(|held| {
                     for account in accounts {
                         held.insert(account.id.clone(), account);
+                    }
+                });
+            }
+            Command::StatusRemoved(id) => {
+                self.state.statuses.update(|held| {
+                    held.remove(&id);
+                });
+                self.state.timelines.update(|pages| {
+                    for page in pages.values_mut() {
+                        page.status_ids.retain(|held| held != &id);
                     }
                 });
             }
@@ -322,6 +333,70 @@ where
             append: cursor.is_some(),
         });
         Ok(page)
+    }
+
+    /// Applies one streaming event to state.
+    ///
+    /// The reducer lives here, not in the socket transport, because state is the only
+    /// thing that can make an event visible: a status that arrives on the socket must
+    /// land in the same entity store a page reads, or the screen holding it cannot
+    /// repaint.
+    ///
+    /// Returns whether the event changed anything, so a caller can skip a notification
+    /// for a frame that said nothing new.
+    pub fn apply(&self, event: &StreamEvent) -> bool {
+        match event {
+            StreamEvent::Update(status) | StreamEvent::StatusUpdate(status) => {
+                let status = (**status).clone();
+                self.dispatch(Command::AccountsUpserted {
+                    accounts: vec![status.account.clone()],
+                });
+                self.dispatch(Command::StatusesUpserted {
+                    statuses: vec![status],
+                });
+                true
+            }
+            StreamEvent::Delete(id) => {
+                let known = self.read_status(id).is_some();
+                self.dispatch(Command::StatusRemoved(id.clone()));
+                known
+            }
+            StreamEvent::Notification(note) => {
+                let mut accounts = vec![note.account.clone()];
+                accounts.extend(note.status.as_ref().map(|status| status.account.clone()));
+                self.dispatch(Command::AccountsUpserted { accounts });
+                match &note.status {
+                    Some(status) => {
+                        self.dispatch(Command::StatusesUpserted {
+                            statuses: vec![status.clone()],
+                        });
+                        true
+                    }
+                    None => false,
+                }
+            }
+            StreamEvent::Conversation(thread) => match &thread.last_status {
+                Some(status) => {
+                    self.dispatch(Command::AccountsUpserted {
+                        accounts: vec![status.account.clone()],
+                    });
+                    self.dispatch(Command::StatusesUpserted {
+                        statuses: vec![status.clone()],
+                    });
+                    true
+                }
+                None => false,
+            },
+            // Filters and events this client does not model say nothing about state.
+            StreamEvent::FiltersChanged | StreamEvent::Unknown(_) => false,
+        }
+    }
+
+    /// Parses and applies one socket frame.
+    ///
+    /// The convenience a socket sink needs: `if sdk.apply_frame(raw) { … }`.
+    pub fn apply_frame(&self, frame: &str) -> bool {
+        StreamEvent::parse(frame).is_some_and(|event| self.apply(&event))
     }
 
     /// What the client already holds for a timeline, newest first.

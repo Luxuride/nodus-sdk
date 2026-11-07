@@ -79,4 +79,10 @@ pub enum Command {
         /// The accounts, in any order.
         accounts: Vec<Account>,
     },
+
+    /// A status was deleted, by its author or by a moderator.
+    ///
+    /// The id leaves every page as well as the entity store: a page that kept it would
+    /// render a hole, and a hole is worse than a shorter page.
+    StatusRemoved(String),
 }
