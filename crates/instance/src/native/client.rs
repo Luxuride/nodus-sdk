@@ -13,6 +13,7 @@ use crate::{Error, Instance, Result};
 /// `reqwest::Client` is reference-counted internally, so cloning this is cheap
 /// and the connection pool is process-wide.
 #[derive(Clone)]
+#[derive(Debug)]
 pub struct ReqwestTransport {
     http: Client,
 }
@@ -67,16 +68,17 @@ impl Transport for ReqwestTransport {
             Method::Delete => reqwest::Method::DELETE,
         };
         let mut builder = self.http.request(http_method, url.clone());
-        {
-            let headers_map = builder.headers_mut().expect("a fresh builder has headers");
-            for (name, value) in &headers {
-                if let Ok(name) = reqwest::header::HeaderName::from_bytes(name.as_bytes()) {
-                    if let Ok(value) = reqwest::header::HeaderValue::from_str(value) {
-                        headers_map.insert(name, value);
-                    }
+        // Built first, then handed to the builder: `reqwest::RequestBuilder` exposes no
+        // mutable header map, because it is consumed by the call that sends it.
+        let mut headers_map = reqwest::header::HeaderMap::with_capacity(headers.len());
+        for (name, value) in headers {
+            if let Ok(name) = reqwest::header::HeaderName::from_bytes(name.as_bytes()) {
+                if let Ok(value) = reqwest::header::HeaderValue::from_str(&value) {
+                    headers_map.insert(name, value);
                 }
             }
         }
+        builder = builder.headers(headers_map);
         if let Some(body) = body {
             builder = builder.body(body);
         }

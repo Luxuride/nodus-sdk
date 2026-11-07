@@ -15,9 +15,8 @@ reaches everything.
 | Crate | Owns | Depends on |
 | --- | --- | --- |
 | `nodus-shared` | wire types both planes agree on (`AccountFeed`, `EventBatch`, `Meta`, contract versions) | — |
-| `nodus-instance-model` | Mastodon domain types (`Status`, `Account`, `Page`, `LocalId`, …) | `serde` |
-| `nodus-instance-api` | the instance surface as traits (`InstanceApi`, `SyncApi`, `Streaming`), `Error`, `Result`, `Instance`, `AppRegistration` | `instance-model`, `url`, `thiserror` |
-| `nodus-instance-rest` | the two transports: `HttpInstance` (`reqwest`, feature `native`) and `BrowserInstance` (`gloo-net`, feature `wasm`) | `instance-api`, optional `reqwest` / `gloo-net` |
+| `nodus-instance` | the Mastodon compatibility floor: domain types (`Status`, `Account`, `Page`, `LocalId`, …), the traits (`InstanceApi`, `SyncApi`, `Streaming`), and **one** REST implementation over a `Transport` seam with two transports — `HttpInstance` (`reqwest`, feature `native`) and `BrowserInstance` (`gloo-net`, feature `wasm`) | `serde`, `url`, `thiserror`, optional `reqwest` / `gloo-net` |
+| `nodus-protocol` | the ceiling: `/api/v1/meta` capabilities, typed event subscriptions, batch requests, and the `choose` rule ("prefer the optimized path, keep the compatible one") | `shared`, `serde`, `thiserror` |
 | `nodus-discovery` | our recommendation API transport, implementing `Discovery` | `state`, `shared` |
 | `nodus-persist` | the cache port (`Persistence`, `CacheKey`, `PersistenceError`) and `MemoryPersistence` | `state` |
 | `nodus-state` | the observed state tree and its vocabulary: `AppState`, `Handle`, `Command`, `FeedState`, `Timeline`, `TimelinePage`, `Degraded`, `Session`, `StreamState`, and the `Discovery` port | `shared`, `serde` |
@@ -29,11 +28,10 @@ The arrows point one way:
 ```text
 nodus-sdk (facade) ──▶ nodus-runtime ──▶ nodus-state ──▶ nodus-shared
         │                    ├──▶ nodus-persist ──▶ nodus-state
-        │                    └──▶ nodus-instance-api ──▶ nodus-instance-model
+        │                    └──▶ nodus-instance (traits + transports)
         ├──▶ nodus-discovery ──▶ nodus-state, nodus-shared
-        └──▶ nodus-persist, nodus-state, nodus-instance-api (re-exports only)
-
-nodus-instance-rest ──▶ nodus-instance-api ──▶ nodus-instance-model
+        ├──▶ nodus-protocol (vocabulary only, no I/O)
+        └──▶ nodus-persist, nodus-state, nodus-instance (re-exports only)
 ```
 
 `persist` → `state` (not the other way) because `CacheKey::Timeline` names a
@@ -123,7 +121,7 @@ Details that constrain implementations:
 - `InstanceApi::Error` and `Discovery::Error` are the transport's own error types;
   the SDK maps them into `SdkError` at its boundary, so an implementation never
   translates into an enum it does not own.
-- `Streaming` is a separate trait in `nodus-instance-api` with one method,
+- `Streaming` is a separate trait in `nodus-instance` with one method,
   `subscribe(kind)`. Streaming is optional — the sync worker polls, the browser
   streams, tests do neither — so it is not a method on `InstanceApi`. The
   implementation owns reconnection; the SDK only observes `StreamState`.
@@ -217,7 +215,7 @@ version rules behind `ClientTooOld` are in [03-contract.md](03-contract.md).
 Nothing in `nodus-state`, `nodus-persist` or `nodus-runtime` depends on `reqwest`,
 `web-sys`, `gloo-net` or a runtime. The wasm build injects HTTP (`BrowserInstance`)
 and IndexedDB; the native test build injects scripted doubles; the state machine
-and its transitions are identical in both. Only `nodus-instance-rest` and
+and its transitions are identical in both. Only `nodus-instance` and
 `nodus-discovery` carry a `cfg(feature = "wasm")` / `cfg(target_arch = "wasm32")`
 switch. That is the property the `wasm32` CI check protects — see
 [03-contract.md](03-contract.md#compatibility-ci).
