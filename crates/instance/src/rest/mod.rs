@@ -251,6 +251,17 @@ impl<T: Transport> RestInstance<T> {
     }
 
     /// A form-encoded POST.
+    /// A POST with a caller-built body (multipart uploads).
+    pub fn post_body(&self, url: Url, content_type: &str, body: Vec<u8>) -> HttpRequest {
+        let headers = vec![("content-type".to_owned(), content_type.to_owned())];
+        HttpRequest {
+            method: Method::Post,
+            url,
+            headers,
+            body: Some(body),
+        }
+    }
+
     pub fn post_form(&self, url: Url, form: &[(&str, String)]) -> HttpRequest {
         self.request(Method::Post, url, Some(form_body(form)))
     }

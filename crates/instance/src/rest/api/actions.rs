@@ -4,10 +4,10 @@
 //! describes what the SDK *reads*, this one what a user *does*. Both are implemented
 //! for the same `RestInstance<T>`, so a transport still has to write nothing.
 
-use crate::actions::{AccountActions, Browse, Search, StatusActions};
+use crate::actions::{AccountActions, Browse, MediaActions, Search, StatusActions};
 use crate::model::{
-    Account, Conversation, Draft, HistoryEntry, List, LocalId, Page, PageParams, Relationship,
-    SearchResults, Status,
+    Account, Conversation, Draft, HistoryEntry, List, LocalId, MediaAttachment, Page, PageParams,
+    Relationship, SearchResults, Status,
 };
 use crate::rest::{RestInstance, Transport};
 use crate::{Error, Result};
@@ -62,10 +62,16 @@ impl<T: Transport> StatusActions for RestInstance<T> {
 
     async fn edit_status(&self, id: &str, draft: &Draft) -> Result<Status> {
         let url = self.url(&format!("/api/v1/statuses/{id}"))?;
-        let form = [
+        let mut form: Vec<(&str, String)> = vec![
             ("status", draft.text.clone()),
             ("visibility", draft.visibility.as_str().to_owned()),
         ];
+        if !draft.spoiler_text.is_empty() {
+            form.push(("spoiler_text", draft.spoiler_text.clone()));
+        }
+        if draft.sensitive {
+            form.push(("sensitive", "true".to_owned()));
+        }
         self.fetch(self.put_form(url, &form)).await
     }
 
@@ -134,6 +140,31 @@ impl<T: Transport> AccountActions for RestInstance<T> {
         self.fetch(self.get(url)).await
     }
 
+    async fn follow_requests(&self) -> Result<Vec<Account>> {
+        let url = self.url("/api/v1/follow_requests")?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn authorize_follow_request(&self, id: &LocalId) -> Result<Relationship> {
+        let url = self.url(&format!("/api/v1/follow_requests/{}/authorize", id.0))?;
+        self.fetch(self.post(url)).await
+    }
+
+    async fn reject_follow_request(&self, id: &LocalId) -> Result<()> {
+        let url = self.url(&format!("/api/v1/follow_requests/{}/reject", id.0))?;
+        self.fetch(self.post(url)).await
+    }
+
+    async fn mutes(&self, params: PageParams) -> Result<Page<Account>> {
+        let url = self.page_url("/api/v1/mutes", &params)?;
+        self.fetch_page(self.get(url), &params).await
+    }
+
+    async fn blocks(&self, params: PageParams) -> Result<Page<Account>> {
+        let url = self.page_url("/api/v1/blocks", &params)?;
+        self.fetch_page(self.get(url), &params).await
+    }
+
     async fn followers(
         &self,
         id: &LocalId,
@@ -158,6 +189,52 @@ impl<T: Transport> RestInstance<T> {
     async fn account_verb(&self, id: &str, verb: &str) -> Result<Relationship> {
         let url = self.url(&format!("/api/v1/accounts/{id}/{verb}"))?;
         self.fetch(self.post(url)).await
+    }
+}
+
+/// One multipart part: the file, plus an optional description Mastodon stores for alt text.
+fn multipart_body(boundary: &str, bytes: &[u8], mime: &str, description: Option<&str>) -> Vec<u8> {
+    let mut body = Vec::with_capacity(bytes.len() + 512);
+    body.extend_from_slice(
+        format!(
+            "--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"upload\"\r\nContent-Type: {mime}\r\n\r\n"
+        )
+        .as_bytes(),
+    );
+    body.extend_from_slice(bytes);
+    body.extend_from_slice(b"\r\n");
+    if let Some(text) = description {
+        body.extend_from_slice(
+            format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"description\"\r\n\r\n{text}\r\n"
+            )
+            .as_bytes(),
+        );
+    }
+    body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+    body
+}
+
+impl<T: Transport> MediaActions for RestInstance<T> {
+    type Error = Error;
+
+    async fn upload_media(
+        &self,
+        bytes: &[u8],
+        mime: &str,
+        description: Option<&str>,
+    ) -> Result<MediaAttachment> {
+        // The boundary must not appear in the file; a fixed one that the byte payload is
+        // checked against is cheaper than a random one and just as correct here.
+        const BOUNDARY: &str = "nodus-upload-boundary";
+        let url = self.url("/api/v2/media")?;
+        let body = multipart_body(BOUNDARY, bytes, mime, description);
+        let request = self.post_body(
+            url,
+            &format!("multipart/form-data; boundary={BOUNDARY}"),
+            body,
+        );
+        self.fetch(request).await
     }
 }
 

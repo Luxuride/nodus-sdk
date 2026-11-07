@@ -21,8 +21,8 @@ use core::fmt::Debug;
 use core::future::Future;
 
 use crate::model::{
-    Account, Conversation, Draft, HistoryEntry, List, LocalId, Page, PageParams, Relationship,
-    SearchResults, Status,
+    Account, Conversation, Draft, HistoryEntry, List, LocalId, MediaAttachment, Page, PageParams,
+    Relationship, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -87,6 +87,21 @@ pub trait StatusActions {
 }
 
 /// Things done to an account.
+pub trait MediaActions {
+    type Error: Debug;
+
+    /// Uploads one attachment and returns what the instance made of it.
+    ///
+    /// The bytes are passed as a slice because the caller owns the file object: the SDK
+    /// never opens a path, web or native.
+    fn upload_media(
+        &self,
+        bytes: &[u8],
+        mime: &str,
+        description: Option<&str>,
+    ) -> impl Future<Output = Result<MediaAttachment, Self::Error>>;
+}
+
 pub trait AccountActions {
     /// Error type of the transport.
     type Error: Debug;
@@ -120,6 +135,25 @@ pub trait AccountActions {
     ) -> impl Future<Output = Result<Page<Account>, Self::Error>>;
 
     /// Who `id` follows.
+    fn follow_requests(&self) -> impl Future<Output = Result<Vec<Account>, Self::Error>>;
+
+    /// Accepts a pending follow request.
+    fn authorize_follow_request(
+        &self,
+        id: &LocalId,
+    ) -> impl Future<Output = Result<Relationship, Self::Error>>;
+
+    /// Refuses a pending follow request.
+    fn reject_follow_request(&self, id: &LocalId) -> impl Future<Output = Result<(), Self::Error>>;
+
+    fn mutes(&self, params: PageParams)
+    -> impl Future<Output = Result<Page<Account>, Self::Error>>;
+
+    fn blocks(
+        &self,
+        params: PageParams,
+    ) -> impl Future<Output = Result<Page<Account>, Self::Error>>;
+
     fn following(
         &self,
         id: &LocalId,

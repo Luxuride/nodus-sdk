@@ -89,6 +89,15 @@ impl<T: Transport> InstanceApi for RestInstance<T> {
         if let Some(reply_to) = &draft.in_reply_to_id {
             form.push(("in_reply_to_id", reply_to.clone()));
         }
+        for media_id in &draft.media_ids {
+            form.push(("media_ids[]", media_id.clone()));
+        }
+        if !draft.spoiler_text.is_empty() {
+            form.push(("spoiler_text", draft.spoiler_text.clone()));
+        }
+        if draft.sensitive {
+            form.push(("sensitive", "true".to_owned()));
+        }
         let mut request = self.post_form(url, &form);
         // Idempotency is what stops a retried compose from posting twice; a draft
         // without a key is a caller bug, not something to paper over here.

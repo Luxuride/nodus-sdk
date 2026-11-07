@@ -200,6 +200,8 @@ pub struct Status {
 pub enum NotificationKind {
     /// Someone followed the account.
     Follow,
+    /// Someone asked to follow a locked account.
+    FollowRequest,
     /// Someone boosted a status.
     Reblog,
     /// Someone favourited a status.
@@ -284,6 +286,27 @@ pub struct Draft {
     pub in_reply_to_id: Option<String>,
     /// Idempotency key, so a retried post cannot double-post.
     pub idempotency_key: Option<String>,
+    /// Already-uploaded attachments, in the order they should appear.
+    pub media_ids: Vec<String>,
+    /// Content warning; empty means none.
+    pub spoiler_text: String,
+    /// Whether the media is behind the warning.
+    pub sensitive: bool,
+}
+
+impl Draft {
+    /// A draft with nothing but text: the common case, and the one a reply box needs.
+    pub fn text(text: impl Into<String>, visibility: Visibility) -> Self {
+        Self {
+            text: text.into(),
+            visibility,
+            in_reply_to_id: None,
+            idempotency_key: None,
+            media_ids: Vec::new(),
+            spoiler_text: String::new(),
+            sensitive: false,
+        }
+    }
 }
 
 /// Pagination parameters for a timeline request.
