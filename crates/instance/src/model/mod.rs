@@ -9,6 +9,7 @@
 mod admin;
 mod filter;
 mod highlights;
+mod instance;
 mod interaction;
 mod schedule;
 mod settings;
@@ -20,6 +21,9 @@ pub use admin::{
 };
 pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword};
 pub use highlights::{FeaturedTag, Rule};
+pub use instance::{
+    InstanceContact, InstanceInfo, InstanceThumbnail, Registrations, Usage, UsageUsers,
+};
 pub use interaction::{
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
     ProfileUpdate, SearchResults, Tag, TagHistory,

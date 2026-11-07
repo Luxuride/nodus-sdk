@@ -23,7 +23,7 @@ use core::future::Future;
 use crate::model::{
     Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
     DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, List, LocalId,
-    MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay, Report,
+    InstanceInfo, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay, Report,
     ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
 
@@ -406,6 +406,16 @@ pub trait SettingsActions {
 
     /// Marks an announcement as read, so it stops appearing.
     fn dismiss_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+}
+
+/// What a server says about itself.
+///
+/// Readable without a token: a name, a version and a contact address are what someone
+/// deciding whether to sign in needs first.
+pub trait InstanceMeta {
+    type Error: Debug;
+
+    fn instance_info(&self) -> impl Future<Output = Result<InstanceInfo, Self::Error>>;
 }
 
 /// Featured tags, and the instance's rules.

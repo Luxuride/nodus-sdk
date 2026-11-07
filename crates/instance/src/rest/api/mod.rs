@@ -1,6 +1,7 @@
 //! `InstanceApi` for every transport, written once.
 
 mod actions;
+mod meta;
 mod admin;
 mod filters;
 mod highlights;
