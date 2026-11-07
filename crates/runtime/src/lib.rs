@@ -22,10 +22,12 @@
 
 pub mod clock;
 pub mod error;
+pub mod scheduler;
 pub mod sdk;
 pub mod shell;
 
 pub use clock::{Clock, FixedClock, SystemClock};
 pub use error::SdkError;
+pub use scheduler::{Budget, Plan, Scheduler, StreamPhase};
 pub use sdk::Sdk;
 pub use shell::{ShellSdk, Unavailable, UnavailableBackend, shell_sdk};
