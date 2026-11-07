@@ -113,6 +113,60 @@ pub struct AccountFeed {
     pub next_cursor: Option<String>,
 }
 
+/// One recommended post.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PostItem {
+    /// Identifier the client sends back with interaction events.
+    pub item_id: i64,
+    /// The status id at its own instance, as a string (Mastodon ids are opaque).
+    pub status_id: String,
+    /// Author's `acct`, fully qualified with the instance.
+    pub account_acct: String,
+    /// Author's display name, already falling back to `acct` when empty.
+    pub account_display_name: String,
+    /// Author's avatar URL, or empty when the instance sent none.
+    pub account_avatar_url: String,
+    /// Post body: sanitized HTML as the instance sent it.
+    pub text: String,
+    /// RFC 3339 publication time, used for the relative timestamp.
+    pub published_at: String,
+    /// Favourite count at fetch time.
+    pub favourites_count: i64,
+    /// Boost count at fetch time.
+    pub reblogs_count: i64,
+    /// Reply count at fetch time.
+    pub replies_count: i64,
+    /// Instance the post lives on, so the client can link to it.
+    pub instance_host: String,
+    /// Why this post, in the same shape as an account reason.
+    pub reason: Reason,
+}
+
+/// A page of recommended posts.
+///
+/// Deliberately the same envelope as [`AccountFeed`] minus `similarity_age_hours`:
+/// posts are ranked from the affinity one level up, so the age of the similarity data
+/// is already reflected in whether any author qualified at all.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PostFeed {
+    /// Snapshot id; page 2 reuses it so item ids stay stable.
+    pub feed_id: String,
+    /// RFC 3339 timestamp of when the snapshot was ranked.
+    pub generated_at: String,
+    /// Contract version the server used to serialize this response.
+    pub contract: String,
+    /// Ranking model version, for offline evaluation.
+    pub model_version: i32,
+    /// `None` when fully personalized; otherwise a machine-readable reason.
+    #[serde(default)]
+    pub degraded: Option<String>,
+    /// The ranked items for this page.
+    pub items: Vec<PostItem>,
+    /// Opaque keyset cursor; `None` on the last page.
+    #[serde(default)]
+    pub next_cursor: Option<String>,
+}
+
 /// Kinds of interaction the client reports back.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
