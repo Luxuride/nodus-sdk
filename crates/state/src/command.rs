@@ -27,6 +27,14 @@ pub enum Command {
     /// Drop the whole feed, e.g. before a refresh.
     ClearFeed,
 
+    /// A page of recommended posts arrived; `append` continues the current list.
+    PostsLoaded {
+        /// The page.
+        feed: nodus_shared::PostFeed,
+        /// Whether this page extends what is already shown.
+        append: bool,
+    },
+
     /// The streaming socket changed state.
     StreamChanged(StreamState),
 

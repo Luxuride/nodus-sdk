@@ -2,7 +2,7 @@
 
 use nodus_instance_api::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
-use nodus_shared::{AccountFeed, EventBatch};
+use nodus_shared::{AccountFeed, EventBatch, PostFeed};
 use nodus_state::{
     AppState, Command, Discovery, FeedState, Session, StreamState, Timeline, TimelinePage,
     TimelineRequest,
@@ -73,6 +73,13 @@ where
                 self.state.feed.update(|state| state.dismiss(item_id));
             }
             Command::ClearFeed => self.state.feed.set(FeedState::default()),
+            Command::PostsLoaded { feed, append } => self.state.posts.update(|state| {
+                if append {
+                    state.extend(feed);
+                } else {
+                    state.replace(feed);
+                }
+            }),
             Command::StreamChanged(stream) => self.state.stream.set(stream),
             Command::SignedIn(session) => self.state.session.set(Some(session)),
             Command::SignedOut => {
@@ -182,6 +189,27 @@ where
             .await
             .map_err(SdkError::Discovery)?;
         self.dispatch(Command::FeedLoaded(feed.clone()));
+        Ok(feed)
+    }
+
+    /// Loads one page of recommended posts and applies it.
+    ///
+    /// `append` is the caller's claim that the cursor continues the current list;
+    /// a first page replaces it, because a new snapshot and an old one are different
+    /// answers to the same question.
+    pub async fn load_posts(
+        &self,
+        cursor: Option<&str>,
+    ) -> Result<PostFeed, SdkError<I::Error, D::Error>> {
+        let feed = self
+            .discovery
+            .posts(cursor)
+            .await
+            .map_err(SdkError::Discovery)?;
+        self.dispatch(Command::PostsLoaded {
+            feed: feed.clone(),
+            append: cursor.is_some(),
+        });
         Ok(feed)
     }
 

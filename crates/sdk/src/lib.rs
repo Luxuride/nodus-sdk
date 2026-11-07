@@ -31,8 +31,8 @@ pub use nodus_runtime::{
     shell_sdk,
 };
 pub use nodus_state::{
-    AppState, Command, Degraded, Discovery, FeedState, Handle, Session, StreamState, Subscription,
-    Timeline, TimelineKey, TimelinePage, TimelineRequest,
+    AppState, Command, Degraded, Discovery, FeedState, Handle, PostFeedState, Session, StreamState,
+    Subscription, Timeline, TimelineKey, TimelinePage, TimelineRequest,
 };
 
 /// The clock port and its system/fixed adapters.

@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use nodus_shared::{AccountFeed, AccountItem};
+use nodus_shared::{AccountFeed, AccountItem, PostFeed, PostItem};
 
 use crate::handle::Handle;
 
@@ -157,6 +157,61 @@ impl FeedState {
     }
 }
 
+/// Recommended posts, as the server ranked them.
+///
+/// Kept beside [`FeedState`] rather than merged into it: the two feeds have
+/// different lifetimes on the server (an account snapshot is reused for minutes, a
+/// post page never is), so one state object would have to guess which lifetime it
+/// was describing.
+#[derive(Debug, Clone, Default)]
+pub struct PostFeedState {
+    /// Items in display order.
+    pub items: Vec<PostItem>,
+    /// Opaque cursor for the next page.
+    pub next_cursor: Option<String>,
+    /// Generation timestamp reported by the server.
+    pub generated_at: Option<String>,
+    /// Active degradation flags.
+    pub degraded: Vec<Degraded>,
+}
+
+impl PostFeedState {
+    /// Replaces the contents with a fresh server response.
+    pub fn replace(&mut self, feed: PostFeed) {
+        self.items = feed.items;
+        self.next_cursor = feed.next_cursor;
+        self.generated_at = Some(feed.generated_at);
+        self.degraded = feed
+            .degraded
+            .as_deref()
+            .and_then(Degraded::from_wire)
+            .into_iter()
+            .collect();
+    }
+
+    /// Appends a continuation page, dropping ids already shown.
+    ///
+    /// The server guarantees no repeats within one snapshot, but a snapshot can be
+    /// re-requested after a refresh, and a duplicated `item_id` is a duplicated
+    /// `key` in the view — the one bug a virtualised list cannot survive.
+    pub fn extend(&mut self, feed: PostFeed) {
+        let known: Vec<i64> = self.items.iter().map(|item| item.item_id).collect();
+        self.items.extend(
+            feed.items
+                .into_iter()
+                .filter(|item| !known.contains(&item.item_id)),
+        );
+        self.next_cursor = feed.next_cursor;
+        self.generated_at = Some(feed.generated_at);
+        self.degraded = feed
+            .degraded
+            .as_deref()
+            .and_then(Degraded::from_wire)
+            .into_iter()
+            .collect();
+    }
+}
+
 /// One page of a timeline.
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TimelinePage {
@@ -186,6 +241,8 @@ pub struct AppState {
     pub stream: Handle<StreamState>,
     /// Recommendation feed.
     pub feed: Handle<FeedState>,
+    /// Recommended posts.
+    pub posts: Handle<PostFeedState>,
     /// Timeline pages, keyed by timeline and tag.
     pub timelines: Handle<HashMap<TimelineKey, TimelinePage>>,
 }
@@ -196,6 +253,7 @@ impl Default for AppState {
             session: Handle::new(None),
             stream: Handle::new(StreamState::Disconnected),
             feed: Handle::new(FeedState::default()),
+            posts: Handle::new(PostFeedState::default()),
             timelines: Handle::new(HashMap::new()),
         }
     }

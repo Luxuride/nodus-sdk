@@ -9,7 +9,7 @@ use core::fmt;
 use std::time::Duration;
 
 use nodus_shared::{
-    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta,
+    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta, PostFeed,
     SyncTokenRequest,
 };
 use nodus_state::Discovery;
@@ -67,14 +67,11 @@ impl DiscoveryClient {
     /// alternative for callers that need a custom stack.
     #[must_use]
     pub fn new(base: Url, token: impl Into<String>) -> Self {
-        let http = match Client::builder()
+        let http = Client::builder()
             .timeout(Duration::from_secs(20))
             .user_agent(concat!("nodus-discovery/", env!("CARGO_PKG_VERSION")))
             .build()
-        {
-            Ok(client) => client,
-            Err(_) => Client::default(),
-        };
+            .unwrap_or_default();
         Self::with_client(base, token, http)
     }
 
@@ -169,6 +166,18 @@ impl Discovery for DiscoveryClient {
         fetch(self.request(Method::GET, url)).await
     }
 
+    async fn posts(&self, cursor: Option<&str>) -> Result<PostFeed> {
+        let mut url = self.url("/api/v1/feed/posts")?;
+        {
+            let mut query = url.query_pairs_mut();
+            query.append_pair("limit", &DEFAULT_FEED_LIMIT.to_string());
+            if let Some(cursor) = cursor {
+                query.append_pair("cursor", cursor);
+            }
+        }
+        fetch(self.request(Method::GET, url)).await
+    }
+
     async fn refresh(&self, feed_id: &str) -> Result<AccountFeed> {
         let url = self.feed_action_url(feed_id, "refresh")?;
         fetch(self.request(Method::POST, url)).await
@@ -225,7 +234,7 @@ async fn decode<T: DeserializeOwned>(response: Response) -> Result<T> {
         let text = String::from_utf8_lossy(&body);
         return Err(status_error(status, retry_after_s, text.as_ref()));
     }
-    serde_json::from_slice(&body).map_err(decode_error)
+    serde_json::from_slice(&body).map_err(|error| decode_error(&error))
 }
 
 async fn send_empty(request: RequestBuilder, method: Method, path: &str) -> Result<()> {
@@ -271,7 +280,7 @@ fn status_error(status: StatusCode, retry_after_s: Option<u64>, body: &str) -> E
 /// The body can echo the request, and a request URL can carry a cursor, so the
 /// serde `Display` is the whole payload. It names the position and the type
 /// mismatch, which is what a bug report needs.
-fn decode_error(error: serde_json::Error) -> Error {
+fn decode_error(error: &serde_json::Error) -> Error {
     Error::Decode(error.to_string())
 }
 
@@ -376,7 +385,7 @@ mod tests {
     fn a_non_json_body_is_a_decode_error_without_the_body() {
         let body = "token=super-secret-value";
         let parse = serde_json::from_str::<serde_json::Value>(body);
-        let error = decode_error(parse.expect_err("the body is not JSON"));
+        let error = decode_error(&parse.expect_err("the body is not JSON"));
         assert!(matches!(error, Error::Decode(_)));
         assert!(!format!("{error}").contains(body));
     }

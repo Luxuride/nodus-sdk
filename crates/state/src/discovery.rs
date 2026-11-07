@@ -7,7 +7,7 @@
 
 use core::future::Future;
 
-use nodus_shared::{AccountFeed, EventBatch, Meta};
+use nodus_shared::{AccountFeed, EventBatch, Meta, PostFeed};
 
 /// The recommendation service, as the client needs it.
 pub trait Discovery {
@@ -25,6 +25,13 @@ pub trait Discovery {
 
     /// Recomputes the feed now, honouring the server's 30-second floor.
     fn refresh(&self, feed_id: &str) -> impl Future<Output = Result<AccountFeed, Self::Error>>;
+
+    /// A page of recommended posts; `cursor` is the previous response's `next_cursor`.
+    ///
+    /// Separate from [`Self::feed`] because the server treats them separately: the
+    /// account feed may reuse a snapshot minted minutes ago, while a fresh post page
+    /// is always a new question ("is there anything newer?").
+    fn posts(&self, cursor: Option<&str>) -> impl Future<Output = Result<PostFeed, Self::Error>>;
 
     /// Reports user interactions. Idempotent per `(item_id, kind, client_ts)`.
     fn send_events(&self, batch: &EventBatch) -> impl Future<Output = Result<(), Self::Error>>;

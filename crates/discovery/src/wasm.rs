@@ -10,7 +10,7 @@ use core::fmt;
 
 use gloo_net::http::{Headers, Request, RequestBuilder, Response};
 use nodus_shared::{
-    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta,
+    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta, PostFeed,
     SyncTokenRequest,
 };
 use nodus_state::Discovery;
@@ -152,6 +152,19 @@ impl Discovery for BrowserDiscovery {
         {
             // `search_params` escapes values with the browser's own encoder, which
             // is the only reliable way to round-trip an opaque cursor.
+            let params = url.search_params();
+            params.append("limit", &DEFAULT_FEED_LIMIT.to_string());
+            if let Some(cursor) = cursor {
+                params.append("cursor", cursor);
+            }
+        }
+        fetch(self.get(&url), "GET", path).await
+    }
+
+    async fn posts(&self, cursor: Option<&str>) -> Result<PostFeed> {
+        let path = "/api/v1/feed/posts";
+        let url = self.url(path)?;
+        {
             let params = url.search_params();
             params.append("limit", &DEFAULT_FEED_LIMIT.to_string());
             if let Some(cursor) = cursor {

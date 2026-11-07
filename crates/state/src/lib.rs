@@ -21,6 +21,6 @@ pub use command::Command;
 pub use discovery::Discovery;
 pub use handle::{Handle, Subscription};
 pub use state::{
-    AppState, Degraded, FeedState, Session, StreamState, Timeline, TimelineKey, TimelinePage,
-    TimelineRequest,
+    AppState, Degraded, FeedState, PostFeedState, Session, StreamState, Timeline, TimelineKey,
+    TimelinePage, TimelineRequest,
 };
