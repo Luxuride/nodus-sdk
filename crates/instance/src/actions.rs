@@ -24,7 +24,7 @@ use crate::model::{
     Account, AdminAccount, Announcement, Conversation, DomainBlock, DomainSeverity, Draft,
     FeaturedTag, Filter, FilterDraft, HistoryEntry, List, LocalId, MediaAttachment,
     ModerationAction, Page, PageParams, Preferences, Relationship, Report, ReportState, Rule,
-    SearchResults, Status,
+    ScheduledStatus, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -385,4 +385,26 @@ pub trait HighlightActions {
 
     /// The instance's code of conduct.
     fn rules(&self) -> impl Future<Output = Result<Vec<Rule>, Self::Error>>;
+}
+
+/// Posts the instance will publish later.
+///
+/// Scheduling is the same call as posting with a time attached, which is why it takes a
+/// [`Draft`] rather than its own shape: the content is identical, only the moment differs.
+pub trait ScheduleActions {
+    /// Error type of the transport.
+    type Error: Debug;
+
+    /// Everything waiting to be published, soonest first.
+    fn scheduled(&self) -> impl Future<Output = Result<Vec<ScheduledStatus>, Self::Error>>;
+
+    /// Queues a draft for `at` (RFC 3339).
+    fn schedule(
+        &self,
+        draft: &Draft,
+        at: &str,
+    ) -> impl Future<Output = Result<ScheduledStatus, Self::Error>>;
+
+    /// Cancels a queued post.
+    fn cancel_scheduled(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 }

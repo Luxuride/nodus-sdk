@@ -8,6 +8,7 @@
 
 mod admin;
 mod highlights;
+mod schedule;
 mod settings;
 mod filter;
 mod interaction;
@@ -17,6 +18,7 @@ pub use admin::{
     AdminAccount, DomainBlock, DomainSeverity, ModerationAction, Report, ReportState,
 };
 pub use highlights::{FeaturedTag, Rule};
+pub use schedule::{ScheduledParams, ScheduledStatus};
 pub use settings::{Announcement, Preferences};
 pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword};
 pub use interaction::{
