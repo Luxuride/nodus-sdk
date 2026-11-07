@@ -37,7 +37,9 @@ fn epoch_millis() -> i64 {
 
 #[cfg(target_arch = "wasm32")]
 fn epoch_millis() -> i64 {
-    #[expect(
+    // `allow`, not `expect`: this arm only compiles for wasm, so a native `clippy`
+    // run would report the expectation as unfulfilled.
+    #[allow(
         clippy::cast_possible_truncation,
         reason = "epoch milliseconds fit i64 for the next 292 million years"
     )]

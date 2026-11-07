@@ -7,7 +7,7 @@
 
 use core::future::Future;
 
-use nodus_shared::{AccountFeed, EventBatch, Meta, PostFeed};
+use nodus_shared::{AccountFeed, EventBatch, MeResponse, Meta, PostFeed};
 
 /// The recommendation service, as the client needs it.
 pub trait Discovery {
@@ -35,6 +35,13 @@ pub trait Discovery {
 
     /// Reports user interactions. Idempotent per `(item_id, kind, client_ts)`.
     fn send_events(&self, batch: &EventBatch) -> impl Future<Output = Result<(), Self::Error>>;
+
+    /// The server's view of this account: whether it holds a token, and whether
+    /// telemetry is on.
+    ///
+    /// The client keeps no opinion of its own here: consent lives on the server, so
+    /// a second browser or a revoked token cannot leave a toggle claiming "on".
+    fn me(&self) -> impl Future<Output = Result<MeResponse, Self::Error>>;
 
     /// Turns server-side sync on or off, and sets the independent telemetry opt-in.
     fn set_sync(

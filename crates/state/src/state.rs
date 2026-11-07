@@ -236,6 +236,19 @@ impl TimelinePage {
     }
 }
 
+/// Server-side sync consent, as the server reports it.
+///
+/// Two independent consents live here because they are separate decisions: letting
+/// the server hold an encrypted copy of the token (background sync) and letting it
+/// keep interaction telemetry. The second stays off unless the user turns it on.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SyncConsent {
+    /// Whether the server holds an encrypted copy of the token.
+    pub enabled: bool,
+    /// Whether interaction telemetry is kept.
+    pub telemetry_opt_in: bool,
+}
+
 /// Everything the client knows, as observed handles.
 ///
 /// Cheap to clone (`Rc` inside). Each field is its own [`Handle`], so a view can
@@ -244,6 +257,8 @@ impl TimelinePage {
 pub struct AppState {
     /// Signed-in account, `None` when signed out.
     pub session: Handle<Option<Session>>,
+    /// What the recommendation server holds for this account.
+    pub sync: Handle<SyncConsent>,
     /// Streaming socket state.
     pub stream: Handle<StreamState>,
     /// Recommendation feed.
@@ -258,6 +273,7 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             session: Handle::new(None),
+            sync: Handle::new(SyncConsent::default()),
             stream: Handle::new(StreamState::Disconnected),
             feed: Handle::new(FeedState::default()),
             posts: Handle::new(PostFeedState::default()),

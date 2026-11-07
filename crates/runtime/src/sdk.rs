@@ -6,8 +6,8 @@ use nodus_instance_api::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_shared::{AccountFeed, EventBatch, PostFeed};
 use nodus_state::{
-    AppState, Command, Discovery, FeedState, Session, StreamState, Timeline, TimelinePage,
-    TimelineRequest,
+    AppState, Command, Discovery, FeedState, Session, StreamState, SyncConsent, Timeline,
+    TimelinePage, TimelineRequest,
 };
 
 use crate::clock::Clock;
@@ -114,8 +114,11 @@ where
                 }
             }),
             Command::StreamChanged(stream) => self.state.stream.set(stream),
+            Command::SyncChanged(consent) => self.state.sync.set(consent),
             Command::SignedIn(session) => self.state.session.set(Some(session)),
             Command::SignedOut => {
+                // Consent belongs to the account we just forgot.
+                self.state.sync.set(SyncConsent::default());
                 self.state.session.set(None);
                 self.state.stream.set(StreamState::Disconnected);
                 self.state.feed.set(FeedState::default());
@@ -321,6 +324,9 @@ where
     }
 
     /// Turns server-side sync on or off; telemetry is a separate consent.
+    ///
+    /// The state changes only after the server accepted it: a toggle that flips on
+    /// a failed request would claim a consent nobody granted.
     pub async fn set_sync(
         &self,
         enable: bool,
@@ -329,7 +335,27 @@ where
         self.discovery
             .set_sync(enable, telemetry_opt_in)
             .await
-            .map_err(SdkError::Discovery)
+            .map_err(SdkError::Discovery)?;
+        self.dispatch(Command::SyncChanged(SyncConsent {
+            enabled: enable,
+            telemetry_opt_in,
+        }));
+        Ok(())
+    }
+
+    /// Asks the server what it holds for this account and records the answer.
+    ///
+    /// Called when Settings opens, so the toggle describes the server's state rather
+    /// than the state of this tab: another browser (or a revocation) is invisible to
+    /// us otherwise.
+    pub async fn load_sync_consent(&self) -> Result<SyncConsent, SdkError<I::Error, D::Error>> {
+        let me = self.discovery.me().await.map_err(SdkError::Discovery)?;
+        let consent = SyncConsent {
+            enabled: me.sync_enabled,
+            telemetry_opt_in: me.telemetry_opt_in,
+        };
+        self.dispatch(Command::SyncChanged(consent));
+        Ok(consent)
     }
 
     /// Warm-starts the home timeline from the cache.
@@ -387,3 +413,6 @@ const fn stream_kind(request: &TimelineRequest<'_>) -> StreamKind {
         TimelineRequest::Federated => StreamKind::Federated,
     }
 }
+
+#[cfg(test)]
+mod tests;

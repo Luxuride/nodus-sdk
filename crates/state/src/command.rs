@@ -5,7 +5,7 @@
 //! enum instead of spread across components, and makes the transitions testable
 //! without a browser.
 
-use crate::state::{Session, StreamState, Timeline, TimelinePage};
+use crate::state::{Session, StreamState, SyncConsent, Timeline, TimelinePage};
 
 /// A change the client wants applied.
 ///
@@ -37,6 +37,9 @@ pub enum Command {
 
     /// The streaming socket changed state.
     StreamChanged(StreamState),
+
+    /// The server answered what it holds for this account.
+    SyncChanged(SyncConsent),
 
     /// A signed-in session was established.
     SignedIn(Session),

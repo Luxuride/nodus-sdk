@@ -10,8 +10,8 @@ use core::fmt;
 
 use gloo_net::http::{Headers, Request, RequestBuilder, Response};
 use nodus_shared::{
-    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta, PostFeed,
-    SyncTokenRequest,
+    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, MeResponse,
+    Meta, PostFeed, SyncTokenRequest,
 };
 use nodus_state::Discovery;
 use serde::Deserialize;
@@ -154,6 +154,12 @@ impl Discovery for BrowserDiscovery {
 
     async fn meta(&self) -> Result<Meta> {
         let path = "/api/v1/meta";
+        let url = self.url(path)?;
+        fetch(self.get(&url), "GET", path).await
+    }
+
+    async fn me(&self) -> Result<MeResponse> {
+        let path = "/api/v1/me";
         let url = self.url(path)?;
         fetch(self.get(&url), "GET", path).await
     }

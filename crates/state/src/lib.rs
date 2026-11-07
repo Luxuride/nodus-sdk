@@ -23,6 +23,6 @@ pub use discovery::Discovery;
 pub use dwell::{DwellTracker, MAX_DWELL_MS, MAX_EVENTS_PER_BATCH};
 pub use handle::{Handle, Subscription};
 pub use state::{
-    AppState, Degraded, FeedState, PostFeedState, Session, StreamState, Timeline, TimelineKey,
-    TimelinePage, TimelineRequest,
+    AppState, Degraded, FeedState, PostFeedState, Session, StreamState, SyncConsent, Timeline,
+    TimelineKey, TimelinePage, TimelineRequest,
 };

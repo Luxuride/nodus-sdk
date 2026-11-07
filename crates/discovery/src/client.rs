@@ -9,8 +9,8 @@ use core::fmt;
 use std::time::Duration;
 
 use nodus_shared::{
-    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, Meta, PostFeed,
-    SyncTokenRequest,
+    AccountFeed, ApiErrorBody, CONTRACT_VERSION, EventBatch, MIN_CONTRACT_VERSION, MeResponse,
+    Meta, PostFeed, SyncTokenRequest,
 };
 use nodus_state::Discovery;
 use reqwest::header::{HeaderMap, RETRY_AFTER};
@@ -173,6 +173,12 @@ impl Discovery for DiscoveryClient {
     async fn meta(&self) -> Result<Meta> {
         let url = self.url("/api/v1/meta")?;
         // No caching: the SDK decides when a contract check is worth a request.
+        fetch(self.request(Method::GET, url)).await
+    }
+
+    async fn me(&self) -> Result<MeResponse> {
+        // Also the only honest answer to "is sync on?": this tab cannot know.
+        let url = self.url("/api/v1/me")?;
         fetch(self.request(Method::GET, url)).await
     }
 

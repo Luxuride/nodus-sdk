@@ -12,7 +12,7 @@ use nodus_instance_api::{
     Status, StreamKind,
 };
 use nodus_persist::MemoryPersistence;
-use nodus_shared::{AccountFeed, EventBatch, Meta, PostFeed};
+use nodus_shared::{AccountFeed, EventBatch, MeResponse, Meta, PostFeed};
 use nodus_state::Discovery;
 
 use crate::clock::SystemClock;
@@ -119,6 +119,10 @@ impl Discovery for UnavailableBackend {
     type Error = Unavailable;
 
     fn meta(&self) -> impl Future<Output = Result<Meta, Self::Error>> {
+        unavailable()
+    }
+
+    fn me(&self) -> impl Future<Output = Result<MeResponse, Self::Error>> {
         unavailable()
     }
 
