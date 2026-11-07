@@ -268,6 +268,26 @@ where
         Ok(feed)
     }
 
+    /// Asks the server for a *new* snapshot, superseding `feed_id`.
+    ///
+    /// `load_feed(None)` is a read and the server may answer it from the snapshot it
+    /// handed out minutes ago — correct for a page load, useless for a refresh the
+    /// user asked for. This names the snapshot being left behind, so the server knows
+    /// the client is not merely re-rendering: it ranks again and the old snapshot stays
+    /// continuable until its own lifetime ends (see `recommender/docs/07-api.md`).
+    pub async fn refresh_feed(
+        &self,
+        feed_id: &str,
+    ) -> Result<AccountFeed, SdkError<I::Error, D::Error>> {
+        let feed = self
+            .discovery
+            .refresh(feed_id)
+            .await
+            .map_err(SdkError::Discovery)?;
+        self.dispatch(Command::FeedLoaded(feed.clone()));
+        Ok(feed)
+    }
+
     /// Loads one page of recommended posts and applies it.
     ///
     /// `append` is the caller's claim that the cursor continues the current list;
