@@ -2,6 +2,7 @@
 
 mod actions;
 mod meta;
+mod registration;
 mod admin;
 mod filters;
 mod highlights;

@@ -23,7 +23,7 @@ use core::future::Future;
 use crate::model::{
     Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
     DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, List, LocalId,
-    InstanceInfo, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay, Report,
+    InstanceInfo, Invite, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay, Report,
     ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
 
@@ -406,6 +406,31 @@ pub trait SettingsActions {
 
     /// Marks an announcement as read, so it stops appearing.
     fn dismiss_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+}
+
+/// Invites and the approval queue: who may join this instance.
+pub trait RegistrationActions {
+    type Error: Debug;
+
+    /// The invites this account may hand out.
+    fn invites(&self, limit: u16) -> impl Future<Output = Result<Vec<Invite>, Self::Error>>;
+    /// Creates one. `max_uses` of `None` means unlimited; `expires_in` is in seconds.
+    fn create_invite(
+        &self,
+        max_uses: Option<u32>,
+        expires_in: Option<u64>,
+        autofollow: bool,
+    ) -> impl Future<Output = Result<Invite, Self::Error>>;
+    fn revoke_invite(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+
+    /// Accounts waiting for a moderator's decision.
+    fn pending_accounts(
+        &self,
+        limit: u16,
+    ) -> impl Future<Output = Result<Vec<AdminAccount>, Self::Error>>;
+    fn approve_account(&self, id: &str)
+        -> impl Future<Output = Result<AdminAccount, Self::Error>>;
+    fn reject_account(&self, id: &str) -> impl Future<Output = Result<AdminAccount, Self::Error>>;
 }
 
 /// What a server says about itself.
