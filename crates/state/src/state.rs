@@ -165,6 +165,8 @@ impl FeedState {
 /// was describing.
 #[derive(Debug, Clone, Default)]
 pub struct PostFeedState {
+    /// Snapshot id, needed to report impressions against the list they were shown in.
+    pub feed_id: Option<String>,
     /// Items in display order.
     pub items: Vec<PostItem>,
     /// Opaque cursor for the next page.
@@ -178,6 +180,7 @@ pub struct PostFeedState {
 impl PostFeedState {
     /// Replaces the contents with a fresh server response.
     pub fn replace(&mut self, feed: PostFeed) {
+        self.feed_id = Some(feed.feed_id);
         self.items = feed.items;
         self.next_cursor = feed.next_cursor;
         self.generated_at = Some(feed.generated_at);
@@ -195,6 +198,10 @@ impl PostFeedState {
     /// re-requested after a refresh, and a duplicated `item_id` is a duplicated
     /// `key` in the view — the one bug a virtualised list cannot survive.
     pub fn extend(&mut self, feed: PostFeed) {
+        // A continuation page belongs to the snapshot it cursor came from, so the id
+        // is kept rather than overwritten: impressions must name the list they were
+        // shown in, and the first page's id is the one the server minted.
+        self.feed_id.get_or_insert(feed.feed_id.clone());
         let known: Vec<i64> = self.items.iter().map(|item| item.item_id).collect();
         self.items.extend(
             feed.items
