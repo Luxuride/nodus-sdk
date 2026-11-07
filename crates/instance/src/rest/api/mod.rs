@@ -1,15 +1,14 @@
-//! `InstanceApi` for the `reqwest` transport: every endpoint Mastodon spells.
+//! `InstanceApi` for every transport, written once.
 
-use nodus_instance_api::api::InstanceApi;
-use nodus_instance_api::model::{
+use crate::api::InstanceApi;
+use crate::model::{
     Account, Context, Draft, LocalId, Notification, Page, PageParams, Relationship, Status,
     StreamKind,
 };
-use nodus_instance_api::{Error, Result};
+use crate::rest::{RestInstance, Transport};
+use crate::{Error, Result};
 
-use super::HttpInstance;
-
-impl InstanceApi for HttpInstance {
+impl<T: Transport> InstanceApi for RestInstance<T> {
     type Error = Error;
 
     async fn verify_credentials(&self) -> Result<Account> {
@@ -61,8 +60,7 @@ impl InstanceApi for HttpInstance {
     }
 
     async fn relationship(&self, id: &LocalId) -> Result<Relationship> {
-        let url = self.url("/api/v1/accounts/relationships")?;
-        let mut url = url;
+        let mut url = self.url("/api/v1/accounts/relationships")?;
         url.query_pairs_mut().append_pair("id[]", &id.0);
         let mut found: Vec<Relationship> = self.fetch(self.get(url)).await?;
         found
@@ -89,22 +87,13 @@ impl InstanceApi for HttpInstance {
         if let Some(reply_to) = &draft.in_reply_to_id {
             form.push(("in_reply_to_id", reply_to.clone()));
         }
-        // `reqwest`'s `form` helper is behind a feature we do not need; the url
-        // crate already carries the encoder and is a dependency either way.
-        let body = url::form_urlencoded::Serializer::new(String::new())
-            .extend_pairs(form.iter().map(|(key, value)| (*key, value.as_str())))
-            .finish();
-        let mut request = self
-            .post(url)
-            .header(
-                reqwest::header::CONTENT_TYPE,
-                "application/x-www-form-urlencoded",
-            )
-            .body(body);
+        let mut request = self.post_form(url, &form);
         // Idempotency is what stops a retried compose from posting twice; a draft
         // without a key is a caller bug, not something to paper over here.
         if let Some(key) = &draft.idempotency_key {
-            request = request.header("Idempotency-Key", key);
+            request
+                .headers
+                .push(("Idempotency-Key".to_owned(), key.clone()));
         }
         self.fetch(request).await
     }
@@ -113,5 +102,32 @@ impl InstanceApi for HttpInstance {
         let url = self.url(&format!("/api/v1/statuses/{id}"))?;
         let _: serde_json::Value = self.fetch(self.delete(url)).await?;
         Ok(())
+    }
+}
+
+#[cfg(feature = "native")]
+mod sync_impl {
+    use crate::Result;
+    use crate::model::{Account, LocalId, Page, PageParams, Status};
+    use crate::rest::{RestInstance, Transport};
+    use crate::sync_api::SyncApi;
+
+    impl<T: Transport> SyncApi for RestInstance<T> {
+        type Error = crate::Error;
+
+        async fn following(&self, id: &LocalId, params: PageParams) -> Result<Page<Account>> {
+            let url = self.page_url(&format!("/api/v1/accounts/{}/following", id.0), &params)?;
+            self.fetch_page(self.get(url), &params).await
+        }
+
+        async fn favourites(&self, params: PageParams) -> Result<Page<Status>> {
+            let url = self.page_url("/api/v1/favourites", &params)?;
+            self.fetch_page(self.get(url), &params).await
+        }
+
+        async fn bookmarks(&self, params: PageParams) -> Result<Page<Status>> {
+            let url = self.page_url("/api/v1/bookmarks", &params)?;
+            self.fetch_page(self.get(url), &params).await
+        }
     }
 }

@@ -1,28 +1,41 @@
-//! The instance surface, as traits, plus the errors and instance helpers both
-//! transports share.
+//! Mastodon compatibility, in one crate.
 //!
-//! One crate, one endpoint surface, two transports selected elsewhere
-//! (`nodus-instance-rest` with `native` → `reqwest`, `wasm` → `gloo-net`). The
-//! traits live here rather than beside either transport so a consumer can be
-//! generic over the surface without compiling an HTTP stack: the SDK state
-//! machine does exactly that.
+//! Everything that would break if Mastodon changed lives here:
 //!
-//! Layout:
-//!
-//! * [`model`] — the instance's data shapes ([`Status`], [`Account`], …),
-//!   re-exported from `nodus-instance-model`;
+//! * [`model`] — the protocol's data shapes ([`Status`], [`Account`], `Page`, …);
 //! * [`api::InstanceApi`] — what a signed-in person can do, as a trait;
 //! * [`sync_api::SyncApi`] — the read-only crawl surface (`following`,
 //!   `favourites`, `bookmarks`), deliberately without any write method;
-//! * this module — errors and instance/app registration helpers.
+//! * [`rest`] — one endpoint implementation over a [`rest::Transport`], plus the
+//!   two transports (`native` → `reqwest`, `wasm` → `gloo-net`).
+//!
+//! The traits are what a consumer codes against: `nodus-state` is generic over
+//! the surface and never compiles an HTTP stack. The transports are the only
+//! place a request is spelled, so an endpoint, an error mapping or a pagination
+//! rule cannot drift between the sync worker and the browser.
+//!
+//! The non-standard extensions (`nodus-protocol`) are **not** here on purpose:
+//! this crate is the compatibility floor, and a client that only understands
+//! this crate works against any Mastodon instance.
 
 pub mod api;
-pub use nodus_instance_model as model;
+pub mod model;
+pub mod rest;
 pub mod sync_api;
+
+#[cfg(feature = "native")]
+pub mod native;
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+pub mod wasm;
 
 pub use api::{InstanceApi, Streaming};
 pub use model::*;
 pub use sync_api::SyncApi;
+
+#[cfg(feature = "native")]
+pub use native::{HttpInstance, ReqwestTransport};
+#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
+pub use wasm::{BrowserInstance, GlooTransport};
 
 use url::Url;
 

@@ -1,6 +1,6 @@
 [package]
-name = "nodus-instance-model"
-description = "Mastodon domain model: the data shapes every instance transport speaks, with no I/O"
+name = "nodus-protocol"
+description = "The Nodus extensions to the Mastodon surface: capability negotiation, event subscriptions, batch requests"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,10 +9,10 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
+nodus-shared = { workspace = true }
 serde = { workspace = true }
-
-[dev-dependencies]
 serde_json = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true

@@ -8,7 +8,7 @@
 //!
 //! ```text
 //! Sdk<I, D, P, C>
-//!  I: InstanceApi  — the Mastodon instance surface (nodus-instance-api)
+//!  I: InstanceApi  — the Mastodon instance surface (nodus-instance)
 //!  D: Discovery    — our recommendation API (nodus-state)
 //!  P: Persistence  — where cached state goes (nodus-persist)
 //!  C: Clock        — time, so tests are deterministic

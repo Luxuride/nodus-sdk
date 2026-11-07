@@ -5,12 +5,11 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{BinaryType, MessageEvent, WebSocket};
 
-use nodus_instance_api::api::Streaming;
-use nodus_instance_api::model::StreamKind;
-use nodus_instance_api::{Error, Result};
-
-use super::BrowserInstance;
-use super::client::ActiveStream;
+use crate::api::Streaming;
+use crate::model::StreamKind;
+use crate::rest::RestInstance;
+use crate::wasm::client::{ActiveStream, GlooTransport};
+use crate::{Error, Result};
 
 /// The wire spelling of a streaming timeline.
 const fn stream_name(kind: StreamKind) -> &'static str {
@@ -21,7 +20,7 @@ const fn stream_name(kind: StreamKind) -> &'static str {
     }
 }
 
-impl Streaming for BrowserInstance {
+impl Streaming for RestInstance<GlooTransport> {
     type Error = Error;
 
     fn subscribe(&self, kind: StreamKind) -> impl Future<Output = Result<()>> {
@@ -29,7 +28,7 @@ impl Streaming for BrowserInstance {
     }
 }
 
-impl BrowserInstance {
+impl RestInstance<GlooTransport> {
     /// The `wss://` URL for a streaming timeline.
     ///
     /// The token rides in the query string because a browser `WebSocket` cannot
@@ -43,7 +42,7 @@ impl BrowserInstance {
         {
             let mut query = url.query_pairs_mut();
             query.append_pair("stream", stream_name(kind));
-            query.append_pair("access_token", self.token.expose());
+            query.append_pair("access_token", self.token().expose());
         }
         Ok(url)
     }
@@ -67,9 +66,10 @@ impl BrowserInstance {
             Error::Transport("/api/v1/streaming: the browser rejected the socket URL".to_owned())
         })?;
         socket.set_binary_type(BinaryType::Arraybuffer);
-        let shared = self.shared.clone();
+        let shared = self.transport().shared().clone();
+        let for_sink = shared.clone();
         let on_message = Closure::<dyn FnMut(MessageEvent)>::new(move |event: MessageEvent| {
-            let Some(sink) = shared.0.borrow().sink.clone() else {
+            let Some(sink) = for_sink.0.borrow().sink.clone() else {
                 return;
             };
             if let Some(text) = event.data().as_string() {
@@ -80,7 +80,7 @@ impl BrowserInstance {
         stream
             .socket
             .set_onmessage(Some(stream.on_message.as_ref().unchecked_ref()));
-        self.shared.0.borrow_mut().streams.push(stream);
+        shared.0.borrow_mut().streams.push(stream);
         Ok(())
     }
 }

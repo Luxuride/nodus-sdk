@@ -1,6 +1,6 @@
 //! Discovery port: our recommendation API.
 //!
-//! Separate from `InstanceApi` (`nodus-instance-api`) on purpose. The instance is
+//! Separate from `InstanceApi` (`nodus-instance`) on purpose. The instance is
 //! the user's data plane and its failures break timelines; this API is the
 //! discovery plane and its failures only weaken the Feed tab. Two traits keep that
 //! distinction in the type system instead of in a comment.

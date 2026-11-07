@@ -7,7 +7,7 @@
 
 use core::future::Future;
 
-use nodus_instance_api::{
+use nodus_instance::{
     Account, Context, Draft, InstanceApi, LocalId, Notification, Page, PageParams, Relationship,
     Status, StreamKind,
 };

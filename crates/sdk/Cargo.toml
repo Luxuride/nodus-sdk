@@ -12,7 +12,7 @@ repository.workspace = true
 # can reach the pieces without adding a crate line per layer.
 [dependencies]
 nodus-discovery = { workspace = true }
-nodus-instance-api = { workspace = true }
+nodus-instance = { workspace = true }
 nodus-persist = { workspace = true }
 nodus-runtime = { workspace = true }
 nodus-state = { workspace = true }

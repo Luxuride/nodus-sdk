@@ -4,27 +4,27 @@
 //! re-export, so `use nodus_sdk::{…}` keeps working while the implementation is
 //! split across `nodus-state` (the state tree and its command vocabulary),
 //! `nodus-runtime` (the `Sdk<I, D, P, C>` state machine), `nodus-persist` (the
-//! cache port), `nodus-instance-api` (the instance surface as traits) and
+//! cache port), `nodus-instance` (the instance surface as traits) and
 //! `nodus-discovery` (our recommendation API transport).
 //!
 //! ```text
 //! web ──► nodus-sdk (facade) ──► runtime ──► state ──► shared
 //!                                  │           ▲
 //!                                  └► persist ─┘
-//!                                  └► instance-api ──► instance-model
+//!                                  └► instance (model + traits + transports)
 //!         sdk ──► discovery ──► state
 //! ```
 //!
 //! The facade depends on `discovery` for its re-exports and `discovery` depends on
 //! `state`; nothing depends back on the facade, so there is no cycle. The
-//! transport impls (`nodus-instance-rest`) are *not* re-exported here: a consumer
+//! transport impls (`nodus-instance` (the `native`/`wasm` transports)) are *not* re-exported here: a consumer
 //! chooses its transport explicitly (`native` or `wasm`) instead of getting
 //! whichever one the facade happened to pick.
 //!
 //! Prefer importing from [`prelude`] for the everyday set; import from the
 //! submodules when you need the finer pieces.
 
-pub use nodus_instance_api::InstanceApi;
+pub use nodus_instance::InstanceApi;
 pub use nodus_persist::{CacheKey, MemoryPersistence, Persistence, PersistenceError};
 pub use nodus_runtime::{
     Budget, Clock, Drive, Driver, FixedClock, Plan, Scheduler, Sdk, SdkError, ShellSdk,
@@ -84,7 +84,7 @@ pub mod state {
 
 /// The instance surface as traits, plus the model it speaks.
 pub mod instance_api {
-    pub use nodus_instance_api::*;
+    pub use nodus_instance::*;
 }
 
 /// The everyday set: state, commands, the SDK and its ports.

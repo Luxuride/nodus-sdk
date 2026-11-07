@@ -2,7 +2,7 @@
 
 use web_time::Instant;
 
-use nodus_instance_api::{InstanceApi, PageParams, StreamKind};
+use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_shared::{AccountFeed, EventBatch, PostFeed};
 use nodus_state::{

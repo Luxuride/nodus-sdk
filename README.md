@@ -21,7 +21,21 @@ for the browser, once for the sync worker) and drift.
 | --- | --- |
 | `nodus-shared` | Wire contract with our recommendation API (`AccountFeed`, `EventBatch`, `Meta`, errors). No I/O, no async, compiles for `wasm32` and `x86_64`. |
 | `nodus-instance` | Mastodon domain model (`Status`, `Account`, `Notification`, `Page`, …) and the instance trait [`InstanceApi`] that transports implement. |
+| `nodus-protocol` | The Nodus extensions on top of Mastodon: capability negotiation, event subscriptions with semantic kinds, batch requests. No I/O, no state. |
 | `nodus-sdk` | The state machine: [`Sdk<I, D, P, C>`], [`AppState`], [`Command`], and the ports it runs on. |
+
+## Two surfaces, one client
+
+`nodus-instance` is the **compatibility floor**: it speaks Mastodon 4.3 and nothing
+else, so the client works against any instance in the fediverse. `nodus-protocol` is the
+**ceiling**: what our own server adds (typed events for likes and edits, batch requests,
+recommendations).
+
+The rule the SDK follows is *prefer the optimized path, always keep the compatible one*:
+the client reads `/api/v1/meta` once per session into `Capabilities`, states what a screen
+needs (`Need::none().events().batch()`), and `choose` answers with the surface to use plus
+the fallback that always works. A screen never mixes the two — half-conditional state is
+worse than one round trip.
 
 ## Ports (traits) and generics
 

@@ -1,6 +1,6 @@
 //! Client for the Nodus discovery API: our recommendation service, not Mastodon.
 //!
-//! The two planes are deliberately separate. `nodus-instance-rest` talks to the
+//! The two planes are deliberately separate. `nodus-instance` (the `native`/`wasm` transports) talks to the
 //! user's server; this crate talks to us, over JSON REST with a Mastodon bearer
 //! token and a `X-Contract-Version` header on every request. Keeping the transport
 //! out of `nodus-sdk` is what lets the state machine compile without `reqwest` or

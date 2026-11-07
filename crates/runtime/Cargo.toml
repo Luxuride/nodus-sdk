@@ -9,7 +9,7 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
-nodus-instance-api = { workspace = true }
+nodus-instance = { workspace = true }
 nodus-persist = { workspace = true }
 nodus-shared = { workspace = true }
 nodus-state = { workspace = true }
