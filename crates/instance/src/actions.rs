@@ -22,8 +22,9 @@ use core::future::Future;
 
 use crate::model::{
     Account, AdminAccount, Announcement, Conversation, DomainBlock, DomainSeverity, Draft,
-    Filter, FilterDraft, HistoryEntry, List, LocalId, MediaAttachment, ModerationAction, Page,
-    PageParams, Preferences, Relationship, Report, ReportState, SearchResults, Status,
+    FeaturedTag, Filter, FilterDraft, HistoryEntry, List, LocalId, MediaAttachment,
+    ModerationAction, Page, PageParams, Preferences, Relationship, Report, ReportState, Rule,
+    SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -356,4 +357,25 @@ pub trait SettingsActions {
 
     /// Marks an announcement as read, so it stops appearing.
     fn dismiss_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+}
+
+/// Featured tags, and the instance's rules.
+///
+/// The rules are read without a token: they are what someone about to join is asked to
+/// accept, so requiring a session to see them would be backwards.
+pub trait HighlightActions {
+    /// Error type of the transport.
+    type Error: Debug;
+
+    /// The tags an account has put on its profile.
+    fn featured_tags(&self, id: &LocalId) -> impl Future<Output = Result<Vec<FeaturedTag>, Self::Error>>;
+
+    /// Features a tag on the authenticated account's profile.
+    fn feature_tag(&self, name: &str) -> impl Future<Output = Result<FeaturedTag, Self::Error>>;
+
+    /// Removes a tag from the profile.
+    fn unfeature_tag(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+
+    /// The instance's code of conduct.
+    fn rules(&self) -> impl Future<Output = Result<Vec<Rule>, Self::Error>>;
 }

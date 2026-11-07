@@ -3,6 +3,7 @@
 mod actions;
 mod admin;
 mod filters;
+mod highlights;
 mod settings;
 
 use crate::api::InstanceApi;

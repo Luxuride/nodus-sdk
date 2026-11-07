@@ -7,6 +7,7 @@
 //! in exactly one place.
 
 mod admin;
+mod highlights;
 mod settings;
 mod filter;
 mod interaction;
@@ -15,6 +16,7 @@ mod stream;
 pub use admin::{
     AdminAccount, DomainBlock, DomainSeverity, ModerationAction, Report, ReportState,
 };
+pub use highlights::{FeaturedTag, Rule};
 pub use settings::{Announcement, Preferences};
 pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword};
 pub use interaction::{
