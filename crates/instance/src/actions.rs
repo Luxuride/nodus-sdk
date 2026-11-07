@@ -21,9 +21,9 @@ use core::fmt::Debug;
 use core::future::Future;
 
 use crate::model::{
-    Account, AdminAccount, Conversation, DomainBlock, DomainSeverity, Draft, Filter,
-    FilterDraft, HistoryEntry, List, LocalId, MediaAttachment, ModerationAction, Page, PageParams,
-    Relationship, Report, ReportState, SearchResults, Status,
+    Account, AdminAccount, Announcement, Conversation, DomainBlock, DomainSeverity, Draft,
+    Filter, FilterDraft, HistoryEntry, List, LocalId, MediaAttachment, ModerationAction, Page,
+    PageParams, Preferences, Relationship, Report, ReportState, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -338,4 +338,22 @@ pub trait AdminActions {
 
     /// Stop refusing a domain.
     fn delete_domain_block(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+}
+
+/// What the account asked for, and what the instance wants said.
+///
+/// Preferences belong to the account rather than to the browser: a reader who always
+/// posts unlisted should not have to set that in every client they sign into.
+pub trait SettingsActions {
+    /// Error type of the transport.
+    type Error: Debug;
+
+    /// The account's posting and reading defaults.
+    fn preferences(&self) -> impl Future<Output = Result<Preferences, Self::Error>>;
+
+    /// Announcements the instance is showing.
+    fn announcements(&self) -> impl Future<Output = Result<Vec<Announcement>, Self::Error>>;
+
+    /// Marks an announcement as read, so it stops appearing.
+    fn dismiss_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 }
