@@ -117,6 +117,7 @@ pub trait Discovery {
 
     fn meta(&self) -> impl Future<Output = Result<Meta, Self::Error>>;
     fn feed(&self, cursor: Option<&str>) -> impl Future<Output = Result<AccountFeed, Self::Error>>;
+    fn posts(&self, cursor: Option<&str>) -> impl Future<Output = Result<PostFeed, Self::Error>>;
     fn refresh(&self, feed_id: &str) -> impl Future<Output = Result<AccountFeed, Self::Error>>;
     fn send_events(&self, batch: &EventBatch) -> impl Future<Output = Result<(), Self::Error>>;
     fn set_sync(&self, enable: bool, telemetry_opt_in: bool)
@@ -125,10 +126,16 @@ pub trait Discovery {
 ```
 
 Our API, not Mastodon's: `meta` reports the contract version and feature flags,
-`feed` pages an opaque cursor, `refresh` recomputes under the server's 30-second
+`feed` pages an opaque cursor over recommended *accounts*, `posts` does the same over
+recommended *posts*, `refresh` recomputes under the server's 30-second
 floor and returns the new snapshot, `send_events` reports interactions, and
 `set_sync` carries two independent consents (server-side sync, and telemetry) in one
-call so they cannot be granted separately by accident. `refresh` returns an
+call so they cannot be granted separately by accident. The two feeds are separate
+methods rather than one generic one because the server gives them different lifetimes:
+an account snapshot is reused for `SNAPSHOT_REUSE` (ten minutes), while a fresh post
+page is always new work — so a caller that conflated them would either re-rank accounts
+on every reload or serve a stale "anything new?". The `append` decision lives in
+`Sdk::load_posts`, which knows whether the caller passed a cursor. `refresh` returns an
 `AccountFeed` rather than `()` because a recompute is also a read: the caller
 usually wants to render the result it just caused.
 
