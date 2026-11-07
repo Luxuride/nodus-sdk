@@ -115,14 +115,14 @@ where
                 }
             }),
             Command::StreamChanged(stream) => self.state.stream.set(stream),
-            Command::SyncChanged(consent) => self.state.sync.set(consent),
+            Command::SyncChanged(consent) => self.state.sync.set(Some(consent)),
             Command::SignedIn(session) => self.state.session.set(Some(session)),
             Command::CapabilitiesLoaded(capabilities) => {
                 self.state.capabilities.set(capabilities);
             }
             Command::SignedOut => {
                 // Consent belongs to the account we just forgot.
-                self.state.sync.set(SyncConsent::default());
+                self.state.sync.set(None);
                 self.state.session.set(None);
                 self.state.stream.set(StreamState::Disconnected);
                 self.state.feed.set(FeedState::default());

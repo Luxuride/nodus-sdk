@@ -239,6 +239,10 @@ impl TimelinePage {
 
 /// Server-side sync consent, as the server reports it.
 ///
+/// Held as `Option` so "we have not asked yet" is representable: a view that renders
+/// `false` while the answer is in flight shows a consent the user never gave, and it
+/// shows it for as long as the request takes.
+///
 /// Two independent consents live here because they are separate decisions: letting
 /// the server hold an encrypted copy of the token (background sync) and letting it
 /// keep interaction telemetry. The second stays off unless the user turns it on.
@@ -264,7 +268,7 @@ pub struct AppState {
     /// Signed-in account, `None` when signed out.
     pub session: Handle<Option<Session>>,
     /// What the recommendation server holds for this account.
-    pub sync: Handle<SyncConsent>,
+    pub sync: Handle<Option<SyncConsent>>,
     /// Streaming socket state.
     pub stream: Handle<StreamState>,
     /// Recommendation feed.
@@ -280,7 +284,7 @@ impl Default for AppState {
         Self {
             capabilities: Handle::new(Capabilities::mastodon()),
             session: Handle::new(None),
-            sync: Handle::new(SyncConsent::default()),
+            sync: Handle::new(None),
             stream: Handle::new(StreamState::Disconnected),
             feed: Handle::new(FeedState::default()),
             posts: Handle::new(PostFeedState::default()),

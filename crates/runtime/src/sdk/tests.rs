@@ -100,13 +100,17 @@ fn the_server_is_what_answers_whether_sync_is_on() {
         enabled: true,
         telemetry_opt_in: false,
     });
-    assert!(!sdk.state().sync.get().enabled);
+    assert!(
+        sdk.state().sync.get().is_none(),
+        "nothing is known before the server answers"
+    );
 
     let consent = block_on(sdk.load_sync_consent()).expect("me answers");
 
     assert!(consent.enabled);
-    assert!(
-        sdk.state().sync.get().enabled,
+    assert_eq!(
+        sdk.state().sync.get().map(|consent| consent.enabled),
+        Some(true),
         "the answer is state, not a local flag"
     );
 }
@@ -121,5 +125,5 @@ fn signing_out_forgets_the_consent() {
 
     sdk.dispatch(Command::SignedOut);
 
-    assert_eq!(sdk.state().sync.get(), SyncConsent::default());
+    assert_eq!(sdk.state().sync.get(), None);
 }
