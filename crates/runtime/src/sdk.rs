@@ -195,6 +195,20 @@ where
         report
     }
 
+    /// Adopts a session the browser already holds.
+    ///
+    /// The record in `localStorage` is a claim, not a fact: it says which account
+    /// this browser was signed in as, and the token it carries is what the instance
+    /// checks on the next request. Adopting it before that check is what keeps the
+    /// first paint signed in — the alternative is a sign-in screen for as long as
+    /// `verify_credentials` takes, on every reload.
+    ///
+    /// A record the instance rejects signs the browser out through the normal path:
+    /// the request fails with `Unauthorized`, and the caller clears the record.
+    pub fn adopt_session(&self, session: Session) {
+        self.dispatch(Command::SignedIn(session));
+    }
+
     /// Validates the token, then stores the session.
     pub async fn sign_in(
         &self,
