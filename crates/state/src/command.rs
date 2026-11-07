@@ -5,6 +5,7 @@
 //! enum instead of spread across components, and makes the transitions testable
 //! without a browser.
 
+use nodus_instance::model::{Account, Status};
 use nodus_protocol::Capabilities;
 
 use crate::state::{Session, StreamState, SyncConsent, Timeline, TimelinePage};
@@ -60,5 +61,22 @@ pub enum Command {
         tag: Option<String>,
         /// The page.
         page: TimelinePage,
+        /// Whether it extends the page already held or replaces it.
+        append: bool,
+    },
+
+    /// Statuses arrived (page body, thread, or a `status.update` event).
+    ///
+    /// Upsert, never replace: a status already on screen must keep its identity so
+    /// scroll position and focus survive the update.
+    StatusesUpserted {
+        /// The statuses, in any order.
+        statuses: Vec<Status>,
+    },
+
+    /// Accounts arrived (page embeds, or an author the client had not seen).
+    AccountsUpserted {
+        /// The accounts, in any order.
+        accounts: Vec<Account>,
     },
 }

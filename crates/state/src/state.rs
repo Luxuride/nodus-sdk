@@ -5,6 +5,7 @@
 
 use std::collections::HashMap;
 
+use nodus_instance::model::{Account, Status};
 use nodus_protocol::Capabilities;
 use nodus_shared::{AccountFeed, AccountItem, PostFeed, PostItem};
 
@@ -227,9 +228,30 @@ pub struct TimelinePage {
     pub status_ids: Vec<String>,
     /// Cursor for older items (`max_id`).
     pub max_id: Option<String>,
+    /// When this page was fetched, in Unix milliseconds.
+    ///
+    /// A page without a timestamp cannot be judged stale, so it is stamped even when
+    /// it came from the network seconds ago: freshness is data, not a guess.
+    pub fetched_at: Option<i64>,
 }
 
 impl TimelinePage {
+    /// Folds an older page into this one, keeping display order.
+    ///
+    /// Appending is a merge, never a replacement: a refresh must not drop pages the
+    /// reader has already scrolled through, and duplicates are dropped by id so a
+    /// paging hiccup cannot render the same status twice.
+    pub fn append(&mut self, older: Self) {
+        let known: std::collections::HashSet<String> = self.status_ids.iter().cloned().collect();
+        self.status_ids.extend(
+            older
+                .status_ids
+                .into_iter()
+                .filter(|id| !known.contains(id)),
+        );
+        self.max_id = older.max_id;
+    }
+
     /// The cursor to request the next (older) page.
     #[must_use]
     pub fn next_cursor(&self) -> Option<&str> {
@@ -277,6 +299,14 @@ pub struct AppState {
     pub posts: Handle<PostFeedState>,
     /// Timeline pages, keyed by timeline and tag.
     pub timelines: Handle<HashMap<TimelineKey, TimelinePage>>,
+    /// Statuses by id: the single copy every screen renders.
+    ///
+    /// Pages hold ids, entities hold content. One status favourited in a thread is
+    /// therefore favourited in every timeline that shows it, without any screen
+    /// copying it, and a `delete` event removes it everywhere at once.
+    pub statuses: Handle<HashMap<String, Status>>,
+    /// Accounts by id, for the same reason.
+    pub accounts: Handle<HashMap<String, Account>>,
 }
 
 impl Default for AppState {
@@ -289,6 +319,8 @@ impl Default for AppState {
             feed: Handle::new(FeedState::default()),
             posts: Handle::new(PostFeedState::default()),
             timelines: Handle::new(HashMap::new()),
+            statuses: Handle::new(HashMap::new()),
+            accounts: Handle::new(HashMap::new()),
         }
     }
 }

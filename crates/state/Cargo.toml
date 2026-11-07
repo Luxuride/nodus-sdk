@@ -9,6 +9,7 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
+nodus-instance = { workspace = true }
 nodus-protocol = { workspace = true }
 nodus-shared = { workspace = true }
 serde = { workspace = true }

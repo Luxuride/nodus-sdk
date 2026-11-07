@@ -2,6 +2,7 @@
 
 use web_time::Instant;
 
+use nodus_instance::model::{Account, Status};
 use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_protocol::Capabilities;
@@ -130,9 +131,35 @@ where
                 // see exactly one notification.
                 self.state.timelines.set(std::collections::HashMap::new());
             }
-            Command::TimelineLoaded { which, tag, page } => {
+            Command::TimelineLoaded {
+                which,
+                tag,
+                page,
+                append,
+            } => {
                 self.state.timelines.update(|timelines| {
-                    timelines.insert((which, tag), page);
+                    let key = (which, tag);
+                    if append {
+                        if let Some(held) = timelines.get_mut(&key) {
+                            held.append(page);
+                            return;
+                        }
+                    }
+                    timelines.insert(key, page);
+                });
+            }
+            Command::StatusesUpserted { statuses } => {
+                self.state.statuses.update(|held| {
+                    for status in statuses {
+                        held.insert(status.id.clone(), status);
+                    }
+                });
+            }
+            Command::AccountsUpserted { accounts } => {
+                self.state.accounts.update(|held| {
+                    for account in accounts {
+                        held.insert(account.id.clone(), account);
+                    }
                 });
             }
         }
@@ -262,17 +289,105 @@ where
         }
         .map_err(SdkError::Instance)?;
 
+        // One write for the entities, one for the page: a page is ids, and the
+        // statuses it names live in exactly one place.
+        self.dispatch(Command::StatusesUpserted {
+            statuses: page.items.clone(),
+        });
+        self.dispatch(Command::AccountsUpserted {
+            accounts: page
+                .items
+                .iter()
+                .map(|status| status.account.clone())
+                .collect(),
+        });
+
         let page = TimelinePage {
             status_ids: page.items.iter().map(|status| status.id.clone()).collect(),
             max_id: page.next_max_id,
+            fetched_at: Some(self.clock.now_unix_millis()),
         };
         let (which, tag) = request.key();
         self.dispatch(Command::TimelineLoaded {
             which,
             tag,
             page: page.clone(),
+            // A cursor means "older than what I hold", so it extends the page; no
+            // cursor means "the newest", so it replaces.
+            append: cursor.is_some(),
         });
         Ok(page)
+    }
+
+    /// What the client already holds for a timeline, newest first.
+    ///
+    /// A pure read: no request, no clock, no side effect. Views render this, which is
+    /// what makes a navigation free when the SDK has the page — and a status missing
+    /// from the entity store simply drops out rather than rendering as a hole.
+    #[must_use]
+    pub fn read_timeline(&self, request: &TimelineRequest<'_>) -> (Vec<Status>, Option<String>) {
+        let key = request.key();
+        let ids = self
+            .state
+            .timelines
+            .with(|timelines| timelines.get(&key).cloned())
+            .unwrap_or_default();
+        let statuses = self.state.statuses.with(|held| {
+            ids.status_ids
+                .iter()
+                .filter_map(|id| held.get(id).cloned())
+                .collect()
+        });
+        (statuses, ids.max_id)
+    }
+
+    /// When the newest page of a timeline was fetched.
+    #[must_use]
+    pub fn timeline_fetched_at(&self, request: &TimelineRequest<'_>) -> Option<i64> {
+        let key = request.key();
+        self.state
+            .timelines
+            .with(|timelines| timelines.get(&key).and_then(|page| page.fetched_at))
+    }
+
+    /// One status the client holds, if any.
+    #[must_use]
+    pub fn read_status(&self, id: &str) -> Option<Status> {
+        self.state.statuses.with(|held| held.get(id).cloned())
+    }
+
+    /// One account the client holds, if any.
+    #[must_use]
+    pub fn read_account(&self, id: &str) -> Option<Account> {
+        self.state.accounts.with(|held| held.get(id).cloned())
+    }
+
+    /// Loads a timeline only if what the client holds is missing or stale.
+    ///
+    /// `ttl_ms` is how long a page is trusted. `Ok(None)` means "nothing to do": the
+    /// caller renders [`read_timeline`](Self::read_timeline) immediately, so a
+    /// navigation paints from state and never waits on the network.
+    pub async fn ensure_timeline(
+        &self,
+        request: TimelineRequest<'_>,
+        cursor: Option<&str>,
+        limit: u16,
+        ttl_ms: i64,
+    ) -> Result<Option<TimelinePage>, SdkError<I::Error, D::Error>> {
+        if cursor.is_none() {
+            let fresh = self
+                .timeline_fetched_at(&request)
+                .is_some_and(|at| self.clock.now_unix_millis().saturating_sub(at) < ttl_ms);
+            let held = self.state.timelines.with(|timelines| {
+                timelines
+                    .get(&request.key())
+                    .is_some_and(|page| !page.status_ids.is_empty())
+            });
+            if fresh && held {
+                return Ok(None);
+            }
+        }
+        self.load_timeline(request, cursor, limit).await.map(Some)
     }
 
     /// Loads one page of the recommendation feed and applies it.
@@ -404,6 +519,9 @@ where
                     which: Timeline::Home,
                     tag: None,
                     page,
+                    // A restored page replaces whatever is held: it is the newest
+                    // state the last session saw, not an older page of it.
+                    append: false,
                 });
             }
         }
