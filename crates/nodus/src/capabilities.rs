@@ -14,16 +14,14 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Feature {
+    /// `GET /api/v1/feed/accounts`: recommendations, server-side.
+    FeedAccounts,
+    /// `POST /api/v1/events`: interaction feedback is accepted.
+    Events,
+    /// `PUT /api/v1/sync/token`: the server keeps an encrypted token and syncs follows.
+    SyncToken,
     /// `POST /api/v1/batch`: several reads in one round trip.
     Batch,
-    /// `GET /api/v1/events`: a subscription with semantic event kinds.
-    Events,
-    /// Favourite/reblog events on subscribed accounts, not only on your own posts.
-    EventsFavourite,
-    /// `GET /api/v1/feed/accounts` and `/api/v1/feed/posts`.
-    Recommendations,
-    /// Server-side timeline synchronisation (the calculator keeps your follows).
-    TimelineSync,
 }
 
 impl Feature {
@@ -31,11 +29,10 @@ impl Feature {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Self::Batch => "batch",
+            Self::FeedAccounts => "feed_accounts",
             Self::Events => "events",
-            Self::EventsFavourite => "events_favourite",
-            Self::Recommendations => "recommendations",
-            Self::TimelineSync => "timeline_sync",
+            Self::SyncToken => "sync_token",
+            Self::Batch => "batch",
         }
     }
 
@@ -43,11 +40,10 @@ impl Feature {
     #[must_use]
     pub fn parse(value: &str) -> Option<Self> {
         [
-            Self::Batch,
+            Self::FeedAccounts,
             Self::Events,
-            Self::EventsFavourite,
-            Self::Recommendations,
-            Self::TimelineSync,
+            Self::SyncToken,
+            Self::Batch,
         ]
         .into_iter()
         .find(|feature| feature.as_str() == value)
@@ -173,11 +169,10 @@ mod tests {
     #[test]
     fn feature_spellings_round_trip() {
         for feature in [
-            Feature::Batch,
+            Feature::FeedAccounts,
             Feature::Events,
-            Feature::EventsFavourite,
-            Feature::Recommendations,
-            Feature::TimelineSync,
+            Feature::SyncToken,
+            Feature::Batch,
         ] {
             assert_eq!(Feature::parse(feature.as_str()), Some(feature));
         }

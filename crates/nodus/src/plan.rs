@@ -4,9 +4,9 @@
 //! against Mastodon: **prefer the optimized path; always keep the compatible one**.
 //! [`choose`] therefore never answers "nothing" — the fallback is the Mastodon surface,
 //! which every instance speaks. Whether the fallback is *good enough* is the caller's
-//! judgement: a timeline can be built from `/api/v1/timelines/home`, while an event
-//! subscription cannot be built from anything, so a caller that needs
-//! [`Need::events`] must decide whether to run without live updates rather than ask
+//! judgement: a timeline can be built from `/api/v1/timelines/home`, while the
+//! recommendation feed cannot be built from anything, so a caller that needs
+//! [`Need::feed_accounts`] must decide whether to show an empty tab rather than ask
 //! again.
 
 use crate::capabilities::{Capabilities, Feature};
@@ -14,10 +14,10 @@ use crate::capabilities::{Capabilities, Feature};
 /// What one screen or one background task actually needs.
 ///
 /// Built by chaining, so the caller reads as the sentence it is
-/// (`Need::none().events().batch()`). A set of flags rather than a `Vec<Feature>`
-/// because the interesting cases are the combinations ("a timeline that also streams"),
-/// and asking for a feature the screen never uses would downgrade the client for no
-/// reason.
+/// (`Need::none().feed_accounts().batch()`). A set of flags rather than a `Vec<Feature>`
+/// because the interesting cases are the combinations ("a feed that also reports
+/// feedback"), and asking for a feature the screen never uses would downgrade the
+/// client for no reason.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Need {
     needed: Vec<Feature>,
@@ -30,15 +30,14 @@ impl Need {
         Self::default()
     }
 
-    /// Everything the protocol offers — what the client wants when it can have it.
+    /// Everything this build of the protocol offers.
     #[must_use]
     pub fn everything() -> Self {
         Self::none()
+            .feed_accounts()
             .events()
-            .favourite_events()
+            .sync_token()
             .batch()
-            .recommendations()
-            .timeline_sync()
     }
 
     fn with(mut self, feature: Feature) -> Self {
@@ -48,34 +47,28 @@ impl Need {
         self
     }
 
-    /// Live events instead of polling.
+    /// The recommendation feed (`/api/v1/feed/accounts`).
+    #[must_use]
+    pub fn feed_accounts(self) -> Self {
+        self.with(Feature::FeedAccounts)
+    }
+
+    /// Interaction feedback is accepted (`/api/v1/events`).
     #[must_use]
     pub fn events(self) -> Self {
         self.with(Feature::Events)
     }
 
-    /// Favourite and boost events, not only statuses.
+    /// The server keeps an encrypted token and syncs follows (`/api/v1/sync/token`).
     #[must_use]
-    pub fn favourite_events(self) -> Self {
-        self.with(Feature::EventsFavourite)
+    pub fn sync_token(self) -> Self {
+        self.with(Feature::SyncToken)
     }
 
-    /// Several reads in one round trip.
+    /// Several reads in one round trip (`/api/v1/batch`).
     #[must_use]
     pub fn batch(self) -> Self {
         self.with(Feature::Batch)
-    }
-
-    /// The recommendation endpoints.
-    #[must_use]
-    pub fn recommendations(self) -> Self {
-        self.with(Feature::Recommendations)
-    }
-
-    /// Server-side follow synchronisation.
-    #[must_use]
-    pub fn timeline_sync(self) -> Self {
-        self.with(Feature::TimelineSync)
     }
 
     /// The features this need requires, in the order they were added.
@@ -130,8 +123,8 @@ impl Plan {
 
 /// Decides which surface to use for `need`.
 ///
-/// A server with no extensions and a server that advertises four of five features both
-/// land on the same answer for a need that uses all five: the Mastodon surface. The
+/// A server with no extensions and a server that advertises three of four features both
+/// land on the same answer for a need that uses all four: the Mastodon surface. The
 /// alternative — mixing surfaces inside one screen — would make half the state
 /// conditional and is what this function exists to prevent.
 #[must_use]
@@ -175,15 +168,15 @@ mod tests {
 
     #[test]
     fn a_need_that_does_not_use_the_missing_feature_still_optimizes() {
-        let capabilities = with(&[Feature::Batch, Feature::Recommendations]);
-        let plan = choose(&capabilities, &Need::none().batch().recommendations());
+        let capabilities = with(&[Feature::FeedAccounts, Feature::Batch]);
+        let plan = choose(&capabilities, &Need::none().feed_accounts().batch());
         assert!(plan.is_optimized());
     }
 
     #[test]
     fn one_missing_feature_in_the_need_downgrades_the_whole_screen() {
         let capabilities = with(&[Feature::Batch]);
-        let plan = choose(&capabilities, &Need::none().batch().events());
+        let plan = choose(&capabilities, &Need::none().batch().sync_token());
         assert_eq!(plan.preferred, Surface::Mastodon);
     }
 
