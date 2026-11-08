@@ -20,9 +20,9 @@ use nodus_state::{
 use nodus_instance::model::Conversation;
 
 use crate::clock::Clock;
-use crate::reads::Reads;
 use crate::driver::Driver;
 use crate::error::SdkError;
+use crate::reads::Reads;
 
 /// Timeline page size for a background refresh.
 ///

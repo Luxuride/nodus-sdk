@@ -21,10 +21,10 @@ use core::fmt::Debug;
 use core::future::Future;
 
 use crate::model::{
-    Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
-    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, InstanceInfo, List,
-    LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship,
-    Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
+    Account, AdminAccount, AdminMeasure, Announcement, Conversation, CustomEmoji, DomainAllow,
+    DomainBlock, DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry,
+    InstanceInfo, List, LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences,
+    Relationship, Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -441,6 +441,14 @@ pub trait InstanceMeta {
     type Error: Debug;
 
     fn instance_info(&self) -> impl Future<Output = Result<InstanceInfo, Self::Error>>;
+
+    /// The emoji this instance offers in its picker, federated ones included.
+    ///
+    /// Mastodon calls these "custom emojis". The list is the instance's cached set, so it
+    /// already contains every emoji it has seen from other servers — which is exactly what
+    /// a composer needs: an emoji offered here is one the instance will render, while an
+    /// emoji copied from elsewhere may not be in the set at all.
+    fn custom_emojis(&self) -> impl Future<Output = Result<Vec<CustomEmoji>, Self::Error>>;
 }
 
 /// Featured tags, and the instance's rules.
