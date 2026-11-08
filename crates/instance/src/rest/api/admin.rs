@@ -1,7 +1,7 @@
 //! Moderation over the REST transport.
 //!
 //! Mastodon splits moderation across two prefixes, and the split is not by version:
-//! reports, accounts, blocks, announcements, relays and domain allows live under
+//! reports, accounts, blocks, relays and domain allows live under
 //! `/api/v1/admin`, while measures (the dashboard aggregates) live under
 //! `/api/v2/admin`. A wrong prefix does not answer 404 as JSON — it falls through to the
 //! instance's HTML error page, which reads like "this account cannot moderate" and cost
@@ -11,7 +11,7 @@ use std::fmt::Write as _;
 
 use crate::actions::AdminActions;
 use crate::model::{
-    AdminAccount, AdminMeasure, Announcement, DomainAllow, DomainBlock, DomainSeverity,
+    AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity,
     ModerationAction, Relay, Report, ReportState,
 };
 use crate::rest::{RestInstance, Transport};
@@ -74,33 +74,6 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         // The body of a delete is empty, so it cannot be decoded as the removed block.
         let _: serde_json::Value = self.fetch(self.delete(url)).await?;
         Ok(())
-    }
-
-    async fn admin_announcements(&self) -> Result<Vec<Announcement>> {
-        let url = self.url("/api/v1/admin/announcements")?;
-        self.fetch(self.get(url)).await
-    }
-
-    async fn create_announcement(
-        &self,
-        content: &str,
-        starts_at: Option<&str>,
-        ends_at: Option<&str>,
-    ) -> Result<Announcement> {
-        let url = self.url("/api/v1/admin/announcements")?;
-        let mut form = vec![("content", content.to_owned())];
-        if let Some(starts_at) = starts_at {
-            form.push(("starts_at", starts_at.to_owned()));
-        }
-        if let Some(ends_at) = ends_at {
-            form.push(("ends_at", ends_at.to_owned()));
-        }
-        self.fetch(self.post_form(url, &form)).await
-    }
-
-    async fn delete_announcement(&self, id: &str) -> Result<()> {
-        let url = self.url(&format!("/api/v1/admin/announcements/{id}"))?;
-        self.fetch(self.delete(url)).await
     }
 
     async fn measures(

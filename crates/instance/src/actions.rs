@@ -22,9 +22,9 @@ use core::future::Future;
 
 use crate::model::{
     Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
-    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, InstanceInfo,
-    List, LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship,
-    Relay, Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
+    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, InstanceInfo, List,
+    LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay,
+    Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -374,16 +374,6 @@ pub trait AdminActions {
 
     /// Stop refusing a domain.
     fn delete_domain_block(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
-    /// Announcements every account sees, including unpublished ones.
-    fn admin_announcements(&self) -> impl Future<Output = Result<Vec<Announcement>, Self::Error>>;
-    /// Publishes one. Empty `starts_at`/`ends_at` mean "now" and "never ends".
-    fn create_announcement(
-        &self,
-        content: &str,
-        starts_at: Option<&str>,
-        ends_at: Option<&str>,
-    ) -> impl Future<Output = Result<Announcement, Self::Error>>;
-    fn delete_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
     /// Dashboard counts for the given keys (`new_users`, `interactions`, …) between two
     /// dates, both `YYYY-MM-DD`.
     fn measures(
