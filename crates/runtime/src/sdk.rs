@@ -515,6 +515,44 @@ where
         (statuses, ids.max_id)
     }
 
+    /// Adopt a page the *server* fetched.
+    ///
+    /// The SSR host paints the first page and hands it to the client in the document, so
+    /// the client must not fetch it again: dispatching it as a loaded page is what makes
+    /// the first client render show content instead of a spinner. The timestamp is the
+    /// moment of adoption, which is honest — the data is as new as this document.
+    pub fn adopt_page(
+        &self,
+        which: Timeline,
+        tag: Option<String>,
+        statuses: Vec<Status>,
+        cursor: Option<String>,
+    ) {
+        let accounts = statuses
+            .iter()
+            .flat_map(|status| {
+                std::iter::once(status.account.clone())
+                    .chain(status.reblog.as_ref().map(|inner| inner.account.clone()))
+            })
+            .collect();
+        let status_ids = statuses
+            .iter()
+            .map(|status| status.id.clone())
+            .collect::<Vec<_>>();
+        self.dispatch(Command::StatusesUpserted { statuses });
+        self.dispatch(Command::AccountsUpserted { accounts });
+        self.dispatch(Command::TimelineLoaded {
+            which,
+            tag,
+            page: TimelinePage {
+                status_ids,
+                max_id: cursor,
+                fetched_at: Some(self.clock.now_unix_millis()),
+            },
+            append: false,
+        });
+    }
+
     /// When the newest page of a timeline was fetched.
     #[must_use]
     pub fn timeline_fetched_at(&self, request: &TimelineRequest<'_>) -> Option<i64> {
