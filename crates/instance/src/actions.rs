@@ -22,7 +22,7 @@ use core::future::Future;
 
 use crate::model::{
     Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
-    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, InstanceInfo, Invite,
+    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, InstanceInfo,
     List, LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship,
     Relay, Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
@@ -426,20 +426,14 @@ pub trait SettingsActions {
     fn dismiss_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 }
 
-/// Invites and the approval queue: who may join this instance.
+/// The approval queue: who may join this instance.
+///
+/// Invites are deliberately absent. Mastodon serves them only to its own web UI —
+/// `GET /api/v1/invites` answers 404 on every version we checked (4.3.8, mastodon.social,
+/// fosstodon.org, chaos.social) — so a client cannot hand them out, and a method that
+/// always failed would be worse than none. The screen links to the instance's own page.
 pub trait RegistrationActions {
     type Error: Debug;
-
-    /// The invites this account may hand out.
-    fn invites(&self, limit: u16) -> impl Future<Output = Result<Vec<Invite>, Self::Error>>;
-    /// Creates one. `max_uses` of `None` means unlimited; `expires_in` is in seconds.
-    fn create_invite(
-        &self,
-        max_uses: Option<u32>,
-        expires_in: Option<u64>,
-        autofollow: bool,
-    ) -> impl Future<Output = Result<Invite, Self::Error>>;
-    fn revoke_invite(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 
     /// Accounts waiting for a moderator's decision.
     fn pending_accounts(

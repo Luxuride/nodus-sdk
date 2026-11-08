@@ -11,7 +11,6 @@ mod filter;
 mod highlights;
 mod instance;
 mod interaction;
-mod registration;
 mod schedule;
 mod settings;
 mod stream;
@@ -29,7 +28,6 @@ pub use interaction::{
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
     ProfileUpdate, SearchResults, Tag, TagHistory,
 };
-pub use registration::Invite;
 pub use schedule::{ScheduledParams, ScheduledStatus};
 pub use settings::{Announcement, Preferences};
 pub use stream::StreamEvent;

@@ -1,39 +1,14 @@
-//! Invites and approvals over the REST transport.
+//! The approval queue over the REST transport.
+//!
+//! Invites are not here on purpose: Mastodon serves them only to its own web UI.
 
 use crate::actions::RegistrationActions;
-use crate::model::{AdminAccount, Invite};
+use crate::model::AdminAccount;
 use crate::rest::{RestInstance, Transport};
 use crate::{Error, Result};
 
 impl<T: Transport> RegistrationActions for RestInstance<T> {
     type Error = Error;
-
-    async fn invites(&self, limit: u16) -> Result<Vec<Invite>> {
-        let url = self.url(&format!("/api/v1/invites?limit={limit}"))?;
-        self.fetch(self.get(url)).await
-    }
-
-    async fn create_invite(
-        &self,
-        max_uses: Option<u32>,
-        expires_in: Option<u64>,
-        autofollow: bool,
-    ) -> Result<Invite> {
-        let url = self.url("/api/v1/invites")?;
-        let mut form = vec![("autofollow", autofollow.to_string())];
-        if let Some(max_uses) = max_uses {
-            form.push(("max_uses", max_uses.to_string()));
-        }
-        if let Some(expires_in) = expires_in {
-            form.push(("expires_in", expires_in.to_string()));
-        }
-        self.fetch(self.post_form(url, &form)).await
-    }
-
-    async fn revoke_invite(&self, id: &str) -> Result<()> {
-        let url = self.url(&format!("/api/v1/invites/{id}"))?;
-        self.fetch(self.delete(url)).await
-    }
 
     async fn pending_accounts(&self, limit: u16) -> Result<Vec<AdminAccount>> {
         // `status=pending` is only meaningful on a server that requires approval; one that
