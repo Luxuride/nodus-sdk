@@ -44,6 +44,12 @@ impl InstanceApi for UnavailableBackend {
         unavailable()
     }
 
+    fn credential_account(
+        &self,
+    ) -> impl Future<Output = Result<nodus_instance::model::CredentialAccount, Self::Error>> {
+        unavailable()
+    }
+
     fn timeline(
         &self,
         _kind: StreamKind,

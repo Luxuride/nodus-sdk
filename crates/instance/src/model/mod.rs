@@ -362,6 +362,26 @@ pub struct Draft {
     pub sensitive: bool,
     /// A poll to attach, when the post asks a question instead of making a statement.
     pub poll: Option<PollDraft>,
+    /// The language the post is written in, as an ISO 639-1 code.
+    ///
+    /// `None` asks the instance to guess, which is what Mastodon does when the field is
+    /// absent. Sending an explicit code is worth the extra control for a writer whose
+    /// posts are not in the instance's default language — without it every post inherits
+    /// the server's guess and the language filter hides them from the people who want them.
+    pub language: Option<String>,
+}
+
+/// A language an instance publishes in.
+///
+/// `GET /api/v1/instance/languages` answers with this pair rather than a bare code, which
+/// is what lets the composer show "German" instead of "de" without shipping its own table.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
+pub struct Language {
+    /// ISO 639-1 code, e.g. `en`.
+    pub code: String,
+    /// English name, e.g. `English`.
+    #[serde(default)]
+    pub name: String,
 }
 
 /// A poll as the composer builds it, before the instance assigns ids.
@@ -418,8 +438,50 @@ impl Draft {
             spoiler_text: String::new(),
             sensitive: false,
             poll: None,
+            language: None,
         }
     }
+
+    /// Sets the language the post is written in.
+    #[must_use]
+    pub fn language(mut self, language: impl Into<String>) -> Self {
+        let language = language.into();
+        self.language = if language.is_empty() {
+            None
+        } else {
+            Some(language)
+        };
+        self
+    }
+}
+
+/// The signed-in account together with the preferences only it can read.
+///
+/// Mastodon answers `verify_credentials` with the account's fields *plus* a `source` object.
+/// `flatten` keeps every `Account` consumer working: this is the same payload with more of it
+/// filled in, not a second account type.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct CredentialAccount {
+    /// The account itself.
+    #[serde(flatten)]
+    pub account: Account,
+    /// Defaults this account posts with.
+    #[serde(default)]
+    pub source: CredentialSource,
+}
+
+/// The `source` half of a credential account: what the writer chose, not what they posted.
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
+pub struct CredentialSource {
+    /// Default visibility for new posts.
+    #[serde(default)]
+    pub privacy: Option<String>,
+    /// Whether new posts default to sensitive.
+    #[serde(default)]
+    pub sensitive: Option<bool>,
+    /// The writer's posting language, as a code.
+    #[serde(default)]
+    pub language: Option<String>,
 }
 
 /// Pagination parameters for a timeline request.

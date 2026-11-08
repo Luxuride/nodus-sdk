@@ -20,6 +20,11 @@ use crate::{Error, Result};
 impl<T: Transport> InstanceApi for RestInstance<T> {
     type Error = Error;
 
+    async fn credential_account(&self) -> Result<crate::model::CredentialAccount> {
+        let url = self.url("/api/v1/accounts/verify_credentials")?;
+        self.fetch(self.get(url)).await
+    }
+
     async fn verify_credentials(&self) -> Result<Account> {
         let url = self.url("/api/v1/accounts/verify_credentials")?;
         self.fetch(self.get(url)).await
@@ -101,6 +106,9 @@ impl<T: Transport> InstanceApi for RestInstance<T> {
         }
         if !draft.spoiler_text.is_empty() {
             form.push(("spoiler_text", draft.spoiler_text.clone()));
+        }
+        if let Some(language) = draft.language.as_ref() {
+            form.push(("language", language.clone()));
         }
         if draft.sensitive {
             form.push(("sensitive", "true".to_owned()));

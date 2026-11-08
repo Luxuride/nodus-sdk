@@ -30,6 +30,16 @@ pub trait InstanceApi {
     /// The signed-in account, used to validate a token and to render the profile.
     fn verify_credentials(&self) -> impl Future<Output = Result<Account, Self::Error>>;
 
+    /// The signed-in account with the preferences only it can read.
+    ///
+    /// Same endpoint as [`InstanceApi::verify_credentials`], but keeps the `source` object —
+    /// which is where the writer's default visibility and posting language live. A picker
+    /// that guessed those from the instance would be wrong for exactly the writers who
+    /// configured them.
+    fn credential_account(
+        &self,
+    ) -> impl Future<Output = Result<crate::model::CredentialAccount, Self::Error>>;
+
     /// A timeline, newest first.
     fn timeline(
         &self,
