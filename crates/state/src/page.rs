@@ -7,7 +7,8 @@
 use std::collections::HashSet;
 
 use nodus_instance::model::{
-    Account, Conversation, Notification, ScheduledStatus, SearchResults, Status,
+    Account, Conversation, FeaturedTag, Filter, Notification, ScheduledStatus, SearchResults,
+    Status,
 };
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +28,15 @@ pub enum PageKind {
     Blocks,
     Scheduled,
     Search(String),
+    /// The viewer's keyword filters.
+    Filters,
+    /// Hashtags pinned to the viewer's profile.
+    FeaturedTags,
+    /// The suggestion list, keyed by whether it is limited to this instance.
+    ///
+    /// The instance pages this list by offset rather than by id, so its cursor is a
+    /// number written as text — see `Sdk::ensure_page`.
+    Directory(bool),
 }
 
 /// The contents of one page.
@@ -39,6 +49,8 @@ pub enum PageItems {
     Accounts(Vec<Account>),
     Conversations(Vec<Conversation>),
     Scheduled(Vec<ScheduledStatus>),
+    Filters(Vec<Filter>),
+    FeaturedTags(Vec<FeaturedTag>),
     Search(Box<SearchResults>),
 }
 
@@ -52,6 +64,8 @@ impl PageItems {
             Self::Accounts(items) => items.iter().map(|item| item.id.clone()).collect(),
             Self::Conversations(items) => items.iter().map(|item| item.id.clone()).collect(),
             Self::Scheduled(items) => items.iter().map(|item| item.id.clone()).collect(),
+            Self::Filters(items) => items.iter().map(|item| item.id.clone()).collect(),
+            Self::FeaturedTags(items) => items.iter().map(|item| item.id.clone()).collect(),
         }
     }
 

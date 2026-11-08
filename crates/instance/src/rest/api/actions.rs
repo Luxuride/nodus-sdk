@@ -278,8 +278,9 @@ impl<T: Transport> Browse for RestInstance<T> {
     async fn directory(&self, local_only: bool, offset: u32) -> Result<Vec<Account>> {
         // `order=active` asks for accounts that actually post; the default ordering is
         // by sign-up date, which surfaces empty profiles.
+        let limit = <Self as Browse>::DIRECTORY_PAGE;
         let url = self.url(&format!(
-            "/api/v1/directory?local={local_only}&order=active&offset={offset}&limit=40"
+            "/api/v1/directory?local={local_only}&order=active&offset={offset}&limit={limit}"
         ))?;
         self.fetch(self.get(url)).await
     }

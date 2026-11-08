@@ -3,7 +3,9 @@
 use web_time::Instant;
 
 use nodus_instance::StreamEvent;
-use nodus_instance::actions::{AccountActions, Browse, ScheduleActions, Search};
+use nodus_instance::actions::{
+    AccountActions, Browse, FilterActions, HighlightActions, ScheduleActions, Search,
+};
 use nodus_instance::model::{Account, Status};
 use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
@@ -746,7 +748,9 @@ where
         + Browse<Error = <I as InstanceApi>::Error>
         + AccountActions<Error = <I as InstanceApi>::Error>
         + Search<Error = <I as InstanceApi>::Error>
-        + ScheduleActions<Error = <I as InstanceApi>::Error>,
+        + ScheduleActions<Error = <I as InstanceApi>::Error>
+        + FilterActions<Error = <I as InstanceApi>::Error>
+        + HighlightActions<Error = <I as InstanceApi>::Error>,
     D: Discovery,
     P: Persistence,
     C: Clock,
@@ -801,6 +805,65 @@ where
     }
 
     /// One request per page kind; the shape of the answer decides the variant.
+    /// One directory page, with its offset cursor.
+    ///
+    /// The directory is the only list Mastodon pages by offset, so the cursor is how many
+    /// accounts have been read so far rather than a post id. A short page is the end:
+    /// the instance sends a bare array with no "there is more" flag.
+    async fn directory_page(
+        &self,
+        local: bool,
+        params: PageParams,
+    ) -> Result<(PageItems, Option<String>), SdkError<<I as InstanceApi>::Error, D::Error>> {
+        let offset: u32 = params
+            .max_id
+            .as_deref()
+            .and_then(|cursor| cursor.parse().ok())
+            .unwrap_or(0);
+        let accounts = self
+            .instance
+            .directory(local, offset)
+            .await
+            .map_err(SdkError::Instance)?;
+        let read = u32::try_from(accounts.len()).unwrap_or(u32::MAX);
+        let next = if read >= <I as Browse>::DIRECTORY_PAGE {
+            Some((offset + read).to_string())
+        } else {
+            None
+        };
+        Ok((PageItems::Accounts(accounts), next))
+    }
+
+    /// The two settings lists, which arrive whole.
+    ///
+    /// Mastodon pages neither, so the cursor is always `None` and a refresh replaces the
+    /// page rather than appending to it.
+    async fn settings_items(
+        &self,
+        kind: &PageKind,
+    ) -> Result<(PageItems, Option<String>), SdkError<<I as InstanceApi>::Error, D::Error>> {
+        let answer = if matches!(kind, PageKind::Filters) {
+            let items = self.instance.filters().await.map_err(SdkError::Instance)?;
+            (PageItems::Filters(items), None)
+        } else {
+            // Featured tags are public on an account, but this page is "mine": the
+            // session names whose profile the settings screen is editing.
+            let account = self
+                .state
+                .session
+                .get()
+                .map(|session| session.account_id)
+                .ok_or(SdkError::NotSignedIn)?;
+            let items = self
+                .instance
+                .featured_tags(&nodus_instance::LocalId(account))
+                .await
+                .map_err(SdkError::Instance)?;
+            (PageItems::FeaturedTags(items), None)
+        };
+        Ok(answer)
+    }
+
     async fn fetch_page_items(
         &self,
         kind: &PageKind,
@@ -887,6 +950,8 @@ where
                     .map_err(SdkError::Instance)?;
                 (PageItems::Search(Box::new(results)), None)
             }
+            PageKind::Directory(local) => self.directory_page(*local, params).await?,
+            PageKind::Filters | PageKind::FeaturedTags => self.settings_items(kind).await?,
         };
         Ok(answer)
     }
@@ -914,7 +979,9 @@ where
             PageItems::Empty
             | PageItems::Notifications(_)
             | PageItems::Conversations(_)
-            | PageItems::Scheduled(_) => {}
+            | PageItems::Scheduled(_)
+            | PageItems::Filters(_)
+            | PageItems::FeaturedTags(_) => {}
         }
     }
 }

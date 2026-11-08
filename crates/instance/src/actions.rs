@@ -198,6 +198,13 @@ pub trait Browse {
     /// Marks a conversation as read.
     fn mark_conversation_read(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
 
+    /// How many accounts one directory page holds.
+    ///
+    /// Published because the directory is paged by offset: a caller that wants the next
+    /// page needs to know when the previous one was full, and Mastodon answers with a
+    /// bare array rather than a cursor.
+    const DIRECTORY_PAGE: u32 = 40;
+
     /// Accounts the instance suggests, for finding people to follow.
     fn directory(
         &self,

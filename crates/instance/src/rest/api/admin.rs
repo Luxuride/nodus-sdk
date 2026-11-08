@@ -168,7 +168,10 @@ mod tests {
     struct Recording(Rc<RefCell<Vec<String>>>);
 
     impl Transport for Recording {
-        fn send(&self, request: HttpRequest) -> impl core::future::Future<Output = Result<HttpResponse>> {
+        fn send(
+            &self,
+            request: HttpRequest,
+        ) -> impl core::future::Future<Output = Result<HttpResponse>> {
             self.0.borrow_mut().push(request.url.to_string());
             core::future::ready(Ok(HttpResponse {
                 status: 200,
