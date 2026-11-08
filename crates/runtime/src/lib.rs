@@ -21,6 +21,7 @@
 //! leaked, and the fix is to move the concern out rather than gate it.
 
 pub mod clock;
+pub mod reads;
 pub mod driver;
 pub mod error;
 pub mod scheduler;

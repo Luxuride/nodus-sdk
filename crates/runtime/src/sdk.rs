@@ -6,7 +6,7 @@ use nodus_instance::StreamEvent;
 use nodus_instance::actions::{
     AccountActions, Browse, FilterActions, HighlightActions, ScheduleActions, Search,
 };
-use nodus_instance::model::{Account, Status};
+use nodus_instance::model::{Account, Notification, Page, Status};
 use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_protocol::Capabilities;
@@ -20,6 +20,7 @@ use nodus_state::{
 use nodus_instance::model::Conversation;
 
 use crate::clock::Clock;
+use crate::reads::Reads;
 use crate::driver::Driver;
 use crate::error::SdkError;
 
@@ -1070,3 +1071,19 @@ where
 
 #[cfg(test)]
 mod tests;
+
+impl<I: InstanceApi, D, P, C> Reads for Sdk<I, D, P, C> {
+    type Error = I::Error;
+
+    async fn home(&self, params: PageParams) -> Result<Page<Status>, Self::Error> {
+        self.instance.timeline(StreamKind::User, params).await
+    }
+
+    async fn notifications(&self, params: PageParams) -> Result<Page<Notification>, Self::Error> {
+        self.instance.notifications(params).await
+    }
+
+    async fn status(&self, id: &str) -> Result<Status, Self::Error> {
+        self.instance.status(id).await
+    }
+}
