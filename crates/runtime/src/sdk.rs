@@ -554,6 +554,21 @@ where
         });
     }
 
+    /// Adopt a page whose items are not statuses: the server painted it, and the store should
+    /// hold what the reader is already looking at.
+    ///
+    /// Same contract as [`Self::adopt_page`]: this is the server's answer, not a guess, so it
+    /// carries a timestamp and the screen's `held` check stops asking.
+    pub fn adopt_items(&self, kind: PageKind, items: PageItems, cursor: Option<String>) {
+        self.dispatch(Command::PageLoaded {
+            kind,
+            items,
+            cursor,
+            append: false,
+            fetched_at: self.clock.now_unix_millis(),
+        });
+    }
+
     /// When the newest page of a timeline was fetched.
     #[must_use]
     pub fn timeline_fetched_at(&self, request: &TimelineRequest<'_>) -> Option<i64> {
