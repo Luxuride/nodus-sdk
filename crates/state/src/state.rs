@@ -62,6 +62,8 @@ pub enum Timeline {
     /// A profile's posts are a timeline like any other: caching them under the same
     /// mechanism is what lets a profile paint from state on a second visit.
     Account(String),
+    /// A list's timeline, by list id.
+    List(String),
 }
 
 /// A timeline the client was asked to load.
@@ -80,6 +82,8 @@ pub enum TimelineRequest<'a> {
     Tag(&'a str),
     /// One account's posts.
     Account(&'a str),
+    /// One list's posts.
+    List(&'a str),
 }
 
 impl TimelineRequest<'_> {
@@ -92,6 +96,7 @@ impl TimelineRequest<'_> {
             Self::Federated => (Timeline::Federated, None),
             Self::Tag(tag) => (Timeline::Tag, Some((*tag).to_owned())),
             Self::Account(id) => (Timeline::Account((*id).to_owned()), None),
+            Self::List(id) => (Timeline::List((*id).to_owned()), None),
         }
     }
 }

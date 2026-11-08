@@ -382,7 +382,7 @@ where
         request: TimelineRequest<'_>,
         cursor: Option<&str>,
         limit: u16,
-    ) -> Result<TimelinePage, SdkError<I::Error, D::Error>> {
+    ) -> Result<TimelinePage, SdkError<<I as InstanceApi>::Error, D::Error>> {
         let params = cursor.map_or_else(
             || PageParams::first(limit),
             |cursor| PageParams::after(cursor, limit),
@@ -732,9 +732,10 @@ const fn stream_kind(request: &TimelineRequest<'_>) -> StreamKind {
     match request {
         // An account timeline is fetched through `account_statuses`, never through
         // the streaming stream kind; the arm exists to keep the match total.
-        TimelineRequest::Home | TimelineRequest::Tag(_) | TimelineRequest::Account(_) => {
-            StreamKind::User
-        }
+        TimelineRequest::Home
+        | TimelineRequest::Tag(_)
+        | TimelineRequest::Account(_)
+        | TimelineRequest::List(_) => StreamKind::User,
         TimelineRequest::Local => StreamKind::Local,
         TimelineRequest::Federated => StreamKind::Federated,
     }
@@ -755,6 +756,49 @@ where
     P: Persistence,
     C: Clock,
 {
+    /// Loads one list's posts into the timeline store.
+    ///
+    /// A list timeline is a timeline, so it lives where every other one does: `/lists`
+    /// keeps no copy of its own and a revisit paints from state. It is separate from
+    /// `load_timeline` because that method is available to every `Sdk`, while reading a
+    /// list needs the `Browse` port — one screen should not widen the bound on all of them.
+    ///
+    /// # Errors
+    ///
+    /// Fails when the instance refuses the request; whatever the store already held is
+    /// left alone.
+    pub async fn load_list_page(
+        &self,
+        id: &str,
+        cursor: Option<&str>,
+        limit: u16,
+    ) -> Result<TimelinePage, SdkError<<I as InstanceApi>::Error, D::Error>> {
+        let params = match cursor {
+            Some(cursor) => PageParams::after(cursor, limit),
+            None => PageParams::first(limit),
+        };
+        let page = self
+            .instance
+            .list_timeline(id, params)
+            .await
+            .map_err(SdkError::Instance)?;
+        let recipe = TimelinePage {
+            status_ids: page.items.iter().map(|status| status.id.clone()).collect(),
+            max_id: page.next_max_id.clone(),
+            fetched_at: Some(self.clock.now_unix_millis()),
+        };
+        self.dispatch(Command::StatusesUpserted {
+            statuses: page.items,
+        });
+        self.dispatch(Command::TimelineLoaded {
+            which: Timeline::List(id.to_owned()),
+            tag: None,
+            page: recipe.clone(),
+            append: cursor.is_some(),
+        });
+        Ok(recipe)
+    }
+
     /// A stored page, as the last fetch left it.
     #[must_use]
     pub fn page(&self, kind: &PageKind) -> Option<PageEntry> {
