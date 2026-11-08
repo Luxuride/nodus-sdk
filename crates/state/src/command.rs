@@ -5,7 +5,7 @@
 //! enum instead of spread across components, and makes the transitions testable
 //! without a browser.
 
-use nodus_instance::model::{Conversation, Account, Status};
+use nodus_instance::model::{Account, Conversation, Status};
 use nodus_protocol::Capabilities;
 
 use crate::page::{PageItems, PageKind};

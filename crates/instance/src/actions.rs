@@ -22,9 +22,9 @@ use core::future::Future;
 
 use crate::model::{
     Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
-    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, List, LocalId,
-    InstanceInfo, Invite, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay, Report,
-    ReportState, Rule, ScheduledStatus, SearchResults, Status,
+    DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, InstanceInfo, Invite,
+    List, LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship,
+    Relay, Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -428,8 +428,7 @@ pub trait RegistrationActions {
         &self,
         limit: u16,
     ) -> impl Future<Output = Result<Vec<AdminAccount>, Self::Error>>;
-    fn approve_account(&self, id: &str)
-        -> impl Future<Output = Result<AdminAccount, Self::Error>>;
+    fn approve_account(&self, id: &str) -> impl Future<Output = Result<AdminAccount, Self::Error>>;
     fn reject_account(&self, id: &str) -> impl Future<Output = Result<AdminAccount, Self::Error>>;
 }
 

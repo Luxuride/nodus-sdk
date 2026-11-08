@@ -1,11 +1,11 @@
 //! `InstanceApi` for every transport, written once.
 
 mod actions;
-mod meta;
-mod registration;
 mod admin;
 mod filters;
 mod highlights;
+mod meta;
+mod registration;
 mod schedule;
 mod settings;
 

@@ -738,7 +738,6 @@ const fn stream_kind(request: &TimelineRequest<'_>) -> StreamKind {
     }
 }
 
-
 impl<I, D, P, C> Sdk<I, D, P, C>
 where
     // Every action trait reports through the instance's own error: one error type per
@@ -809,19 +808,35 @@ where
     ) -> Result<(PageItems, Option<String>), SdkError<<I as InstanceApi>::Error, D::Error>> {
         let answer = match kind {
             PageKind::Notifications => {
-                let page = self.instance.notifications(params).await.map_err(SdkError::Instance)?;
+                let page = self
+                    .instance
+                    .notifications(params)
+                    .await
+                    .map_err(SdkError::Instance)?;
                 (PageItems::Notifications(page.items), page.next_max_id)
             }
             PageKind::Conversations => {
-                let page = self.instance.conversations(params).await.map_err(SdkError::Instance)?;
+                let page = self
+                    .instance
+                    .conversations(params)
+                    .await
+                    .map_err(SdkError::Instance)?;
                 (PageItems::Conversations(page.items), page.next_max_id)
             }
             PageKind::Favourites => {
-                let page = self.instance.favourites(params).await.map_err(SdkError::Instance)?;
+                let page = self
+                    .instance
+                    .favourites(params)
+                    .await
+                    .map_err(SdkError::Instance)?;
                 (PageItems::Statuses(page.items), page.next_max_id)
             }
             PageKind::Bookmarks => {
-                let page = self.instance.bookmarks(params).await.map_err(SdkError::Instance)?;
+                let page = self
+                    .instance
+                    .bookmarks(params)
+                    .await
+                    .map_err(SdkError::Instance)?;
                 (PageItems::Statuses(page.items), page.next_max_id)
             }
             PageKind::Followers(id) => {
@@ -841,15 +856,27 @@ where
                 (PageItems::Accounts(page.items), page.next_max_id)
             }
             PageKind::Mutes => {
-                let page = self.instance.mutes(params).await.map_err(SdkError::Instance)?;
+                let page = self
+                    .instance
+                    .mutes(params)
+                    .await
+                    .map_err(SdkError::Instance)?;
                 (PageItems::Accounts(page.items), page.next_max_id)
             }
             PageKind::Blocks => {
-                let page = self.instance.blocks(params).await.map_err(SdkError::Instance)?;
+                let page = self
+                    .instance
+                    .blocks(params)
+                    .await
+                    .map_err(SdkError::Instance)?;
                 (PageItems::Accounts(page.items), page.next_max_id)
             }
             PageKind::Scheduled => {
-                let items = self.instance.scheduled().await.map_err(SdkError::Instance)?;
+                let items = self
+                    .instance
+                    .scheduled()
+                    .await
+                    .map_err(SdkError::Instance)?;
                 (PageItems::Scheduled(items), None)
             }
             PageKind::Search(query) => {
@@ -884,7 +911,10 @@ where
                     accounts: results.accounts.clone(),
                 });
             }
-            PageItems::Empty | PageItems::Notifications(_) | PageItems::Conversations(_) | PageItems::Scheduled(_) => {}
+            PageItems::Empty
+            | PageItems::Notifications(_)
+            | PageItems::Conversations(_)
+            | PageItems::Scheduled(_) => {}
         }
     }
 }

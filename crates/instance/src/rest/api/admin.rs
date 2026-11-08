@@ -1,8 +1,11 @@
 //! Moderation over the REST transport.
 //!
-//! The paths are `/api/v2/admin` where Mastodon moved reports there and `/api/v1/admin`
-//! elsewhere; both are stable, and a client that guessed would fail only for the
-//! moderator — who is exactly the person least able to test an alternative.
+//! Mastodon splits moderation across two prefixes, and the split is not by version:
+//! reports, accounts, blocks, announcements, relays and domain allows live under
+//! `/api/v1/admin`, while measures (the dashboard aggregates) live under
+//! `/api/v2/admin`. A wrong prefix does not answer 404 as JSON — it falls through to the
+//! instance's HTML error page, which reads like "this account cannot moderate" and cost
+//! a debugging session, so each path below is spelled out rather than derived.
 
 use std::fmt::Write as _;
 
@@ -19,19 +22,19 @@ impl<T: Transport> AdminActions for RestInstance<T> {
 
     async fn reports(&self, state: ReportState, limit: u16) -> Result<Vec<Report>> {
         let url = self.url(&format!(
-            "/api/v2/admin/reports?state={}&limit={limit}",
+            "/api/v1/admin/reports?state={}&limit={limit}",
             state.as_str()
         ))?;
         self.fetch(self.get(url)).await
     }
 
     async fn resolve_report(&self, id: &str) -> Result<Report> {
-        let url = self.url(&format!("/api/v2/admin/reports/{id}/resolve"))?;
+        let url = self.url(&format!("/api/v1/admin/reports/{id}/resolve"))?;
         self.fetch(self.post(url)).await
     }
 
     async fn reopen_report(&self, id: &str) -> Result<Report> {
-        let url = self.url(&format!("/api/v2/admin/reports/{id}/reopen"))?;
+        let url = self.url(&format!("/api/v1/admin/reports/{id}/reopen"))?;
         self.fetch(self.post(url)).await
     }
 
@@ -106,7 +109,7 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         start_at: &str,
         end_at: &str,
     ) -> Result<Vec<AdminMeasure>> {
-        let mut path = format!("/api/v1/admin/measures?start_at={start_at}&end_at={end_at}");
+        let mut path = format!("/api/v2/admin/measures?start_at={start_at}&end_at={end_at}");
         for key in keys {
             let _ = write!(path, "&keys[]={key}");
         }
@@ -144,5 +147,77 @@ impl<T: Transport> AdminActions for RestInstance<T> {
     async fn delete_domain_allow(&self, id: &str) -> Result<()> {
         let url = self.url(&format!("/api/v1/admin/domain_allows/{id}"))?;
         self.fetch(self.delete(url)).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::cell::RefCell;
+    use std::rc::Rc;
+
+    use super::*;
+    use crate::model::ReportState;
+    use crate::rest::{HttpRequest, HttpResponse};
+
+    /// Records the URL of every request and answers with an empty list.
+    ///
+    /// The point of this fake is the *path*, not the payload: a wrong admin prefix
+    /// answers with the instance's HTML 404 page, which looks exactly like a permission
+    /// problem to whoever is holding the token.
+    #[derive(Clone, Default)]
+    struct Recording(Rc<RefCell<Vec<String>>>);
+
+    impl Transport for Recording {
+        fn send(&self, request: HttpRequest) -> impl core::future::Future<Output = Result<HttpResponse>> {
+            self.0.borrow_mut().push(request.url.to_string());
+            core::future::ready(Ok(HttpResponse {
+                status: 200,
+                retry_after_s: None,
+                body: b"[]".to_vec(),
+            }))
+        }
+    }
+
+    fn instance() -> (RestInstance<Recording>, Rc<RefCell<Vec<String>>>) {
+        let recording = Recording::default();
+        let seen = Rc::clone(&recording.0);
+        let instance = crate::Instance::parse("https://mastodon.example").expect("valid host");
+        (
+            RestInstance::with_transport(&instance, "token", recording),
+            seen,
+        )
+    }
+
+    fn block_on<F: core::future::Future>(future: F) -> F::Output {
+        let mut future = core::pin::pin!(future);
+        let mut context = core::task::Context::from_waker(core::task::Waker::noop());
+        match future.as_mut().poll(&mut context) {
+            core::task::Poll::Ready(output) => output,
+            core::task::Poll::Pending => panic!("the recording transport never pends"),
+        }
+    }
+
+    #[test]
+    fn reports_are_asked_where_mastodon_serves_them() {
+        let (instance, seen) = instance();
+        block_on(instance.reports(ReportState::Open, 1)).expect("recorded");
+        let first = seen.borrow()[0].clone();
+        assert!(
+            first.starts_with("https://mastodon.example/api/v1/admin/reports?state=open"),
+            "reports are `/api/v1/admin/reports`, got {first}"
+        );
+    }
+
+    #[test]
+    fn measures_are_asked_under_v2() {
+        let (instance, seen) = instance();
+        // The dashboard aggregates are the one piece of moderation Mastodon serves
+        // under `/api/v2`, which is the detail this test exists to keep pinned.
+        let _ = block_on(instance.measures(&["new_users"], "2024-01-01", "2024-01-08"));
+        let first = seen.borrow()[0].clone();
+        assert!(
+            first.starts_with("https://mastodon.example/api/v2/admin/measures"),
+            "measures are `/api/v2/admin/measures`, got {first}"
+        );
     }
 }

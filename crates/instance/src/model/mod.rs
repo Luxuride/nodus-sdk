@@ -10,8 +10,8 @@ mod admin;
 mod filter;
 mod highlights;
 mod instance;
-mod registration;
 mod interaction;
+mod registration;
 mod schedule;
 mod settings;
 mod stream;
@@ -22,7 +22,6 @@ pub use admin::{
 };
 pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword};
 pub use highlights::{FeaturedTag, Rule};
-pub use registration::Invite;
 pub use instance::{
     InstanceContact, InstanceInfo, InstanceThumbnail, Registrations, Usage, UsageUsers,
 };
@@ -30,6 +29,7 @@ pub use interaction::{
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
     ProfileUpdate, SearchResults, Tag, TagHistory,
 };
+pub use registration::Invite;
 pub use schedule::{ScheduledParams, ScheduledStatus};
 pub use settings::{Announcement, Preferences};
 pub use stream::StreamEvent;
