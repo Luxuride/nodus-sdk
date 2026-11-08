@@ -263,14 +263,13 @@ impl<T: Transport> RestInstance<T> {
 
     /// A form-encoded POST.
     /// A POST with a caller-built body (multipart uploads).
+    /// A POST with a raw body and the bearer token attached.
+    ///
+    /// It goes through `request` for the same reason every other verb does: a request
+    /// built by hand is a request that can forget the token, and an upload that forgets
+    /// it comes back as "token rejected (revoked or insufficient scope)".
     pub fn post_body(&self, url: Url, content_type: &str, body: Vec<u8>) -> HttpRequest {
-        let headers = vec![("content-type".to_owned(), content_type.to_owned())];
-        HttpRequest {
-            method: Method::Post,
-            url,
-            headers,
-            body: Some(body),
-        }
+        self.request(Method::Post, url, Some((content_type.to_owned(), body)))
     }
 
     pub fn post_form(&self, url: Url, form: &[(&str, String)]) -> HttpRequest {
