@@ -105,6 +105,24 @@ impl<T: Transport> InstanceApi for RestInstance<T> {
         if draft.sensitive {
             form.push(("sensitive", "true".to_owned()));
         }
+        if let Some(poll) = &draft.poll {
+            // The wire shape is `poll[options][]`, repeated; an option that is only spaces
+            // is dropped here rather than sent, because the instance rejects the whole post.
+            for option in poll
+                .options
+                .iter()
+                .filter(|option| !option.trim().is_empty())
+            {
+                form.push(("poll[options][]", option.clone()));
+            }
+            form.push(("poll[expires_in]", poll.expires_in.to_string()));
+            if poll.multiple {
+                form.push(("poll[multiple]", "true".to_owned()));
+            }
+            if poll.hide_totals {
+                form.push(("poll[hide_totals]", "true".to_owned()));
+            }
+        }
         let mut request = self.post_form(url, &form);
         // Idempotency is what stops a retried compose from posting twice; a draft
         // without a key is a caller bug, not something to paper over here.

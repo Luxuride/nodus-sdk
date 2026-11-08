@@ -254,3 +254,104 @@ mod tests {
         assert_eq!(FilterAction::default(), FilterAction::Warn);
     }
 }
+
+/// What the saved filters say about one post.
+///
+/// Lives beside the matcher rather than in a view because every renderer must reach the
+/// same conclusion: a thread assembled from cache and a timeline served from a page all
+/// have to answer "does this reader want to see this?" identically.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Verdict {
+    /// No filter matched.
+    Visible,
+    /// A filter matched and asked for a warning; the string names it.
+    Warn(String),
+    /// A filter matched and asked for the post to disappear.
+    Hidden,
+}
+
+/// Judges one post's text against the filters meant for `context`.
+///
+/// A matched filter wins over an unmatched one, and a hide wins over a warn: if any
+/// filter says "never show me this", another filter's milder opinion must not override it.
+/// The text judged is the post's plain text plus its content warning, never the HTML — a
+/// phrase must not match across a tag boundary that nobody typed.
+#[must_use]
+pub fn judge(filters: &[Filter], text: &str, context: FilterContext) -> Verdict {
+    let mut warned: Option<String> = None;
+    for filter in filters {
+        if !filter.applies_to(context) || !filter.matches(text) {
+            continue;
+        }
+        match filter.filter_action {
+            FilterAction::Hide => return Verdict::Hidden,
+            FilterAction::Warn => {
+                warned.get_or_insert_with(|| filter.title.clone());
+            }
+        }
+    }
+    warned.map_or(Verdict::Visible, Verdict::Warn)
+}
+
+#[cfg(test)]
+mod verdict_tests {
+    use super::{Filter, FilterAction, FilterContext, FilterKeyword, Verdict, judge};
+
+    fn filter(action: FilterAction, keyword: &str, context: FilterContext) -> Filter {
+        Filter {
+            id: "1".to_owned(),
+            title: "Spoilers".to_owned(),
+            context: vec![context],
+            expires_at: None,
+            filter_action: action,
+            keywords: vec![FilterKeyword {
+                id: "1".to_owned(),
+                keyword: keyword.to_owned(),
+                whole_word: false,
+            }],
+        }
+    }
+
+    #[test]
+    fn a_matching_hide_removes_the_post() {
+        let filters = [filter(FilterAction::Hide, "spoiler", FilterContext::Home)];
+        assert_eq!(
+            judge(&filters, "a spoiler", FilterContext::Home),
+            Verdict::Hidden
+        );
+    }
+
+    #[test]
+    fn a_hide_beats_a_warn() {
+        let filters = [
+            filter(FilterAction::Warn, "spoiler", FilterContext::Home),
+            filter(FilterAction::Hide, "spoiler", FilterContext::Home),
+        ];
+        assert_eq!(
+            judge(&filters, "a spoiler", FilterContext::Home),
+            Verdict::Hidden
+        );
+    }
+
+    #[test]
+    fn a_warn_names_its_filter_and_a_foreign_context_is_ignored() {
+        let filters = [filter(FilterAction::Warn, "spoiler", FilterContext::Thread)];
+        assert_eq!(
+            judge(&filters, "a spoiler", FilterContext::Thread),
+            Verdict::Warn("Spoilers".to_owned())
+        );
+        assert_eq!(
+            judge(&filters, "a spoiler", FilterContext::Home),
+            Verdict::Visible
+        );
+    }
+
+    #[test]
+    fn an_unmatched_post_is_visible() {
+        let filters = [filter(FilterAction::Hide, "spoiler", FilterContext::Home)];
+        assert_eq!(
+            judge(&filters, "nothing to see", FilterContext::Home),
+            Verdict::Visible
+        );
+    }
+}

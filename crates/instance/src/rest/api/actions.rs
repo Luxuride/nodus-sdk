@@ -274,6 +274,13 @@ impl<T: Transport> MediaActions for RestInstance<T> {
         );
         self.fetch(request).await
     }
+
+    async fn update_media(&self, id: &str, description: &str) -> Result<MediaAttachment> {
+        let url = self.url(&format!("/api/v1/media/{id}"))?;
+        let form = [("description", description.to_owned())];
+        let request = self.put_form(url, &form);
+        self.fetch(request).await
+    }
 }
 
 impl<T: Transport> Browse for RestInstance<T> {

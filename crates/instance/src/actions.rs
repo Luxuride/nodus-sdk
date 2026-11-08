@@ -102,6 +102,17 @@ pub trait MediaActions {
         mime: &str,
         description: Option<&str>,
     ) -> impl Future<Output = Result<MediaAttachment, Self::Error>>;
+
+    /// Sets or replaces one attachment's description.
+    ///
+    /// Separate from [`Self::upload_media`] because alt text is often written after the
+    /// picture is already attached, and a caller that can only upload would have to send
+    /// the bytes again to say what they show.
+    fn update_media(
+        &self,
+        id: &str,
+        description: &str,
+    ) -> impl Future<Output = Result<MediaAttachment, Self::Error>>;
 }
 
 pub trait AccountActions {

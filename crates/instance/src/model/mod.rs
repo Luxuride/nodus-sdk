@@ -20,7 +20,7 @@ pub use admin::{
     AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity, MeasurePoint,
     ModerationAction, Relay, Report, ReportState,
 };
-pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword};
+pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword, Verdict, judge};
 pub use highlights::{FeaturedTag, Rule};
 pub use instance::{
     InstanceContact, InstanceInfo, InstanceThumbnail, Registrations, Usage, UsageUsers,
@@ -362,6 +362,50 @@ pub struct Draft {
     pub spoiler_text: String,
     /// Whether the media is behind the warning.
     pub sensitive: bool,
+    /// A poll to attach, when the post asks a question instead of making a statement.
+    pub poll: Option<PollDraft>,
+}
+
+/// A poll as the composer builds it, before the instance assigns ids.
+///
+/// Separate from [`Poll`], which is what the server answers with: this one has no votes,
+/// no ids and no expiry date, only the options and how long they stay open.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PollDraft {
+    /// Two to four options, in the order they should appear.
+    pub options: Vec<String>,
+    /// How long the poll accepts votes, in seconds.
+    pub expires_in: u32,
+    /// Whether a voter may pick more than one option.
+    pub multiple: bool,
+    /// Whether the counts stay hidden until the poll closes.
+    pub hide_totals: bool,
+}
+
+impl PollDraft {
+    /// The shortest poll someone would actually mean: options, and a day to answer.
+    pub fn new(options: Vec<String>, expires_in: u32) -> Self {
+        Self {
+            options,
+            expires_in,
+            multiple: false,
+            hide_totals: false,
+        }
+    }
+
+    /// Allow several answers.
+    #[must_use]
+    pub fn multiple(mut self, multiple: bool) -> Self {
+        self.multiple = multiple;
+        self
+    }
+
+    /// Hide the counts until the poll closes.
+    #[must_use]
+    pub fn hide_totals(mut self, hide: bool) -> Self {
+        self.hide_totals = hide;
+        self
+    }
 }
 
 impl Draft {
@@ -375,6 +419,7 @@ impl Draft {
             media_ids: Vec::new(),
             spoiler_text: String::new(),
             sensitive: false,
+            poll: None,
         }
     }
 }
