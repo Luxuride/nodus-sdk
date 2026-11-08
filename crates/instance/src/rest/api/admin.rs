@@ -9,8 +9,8 @@
 
 use crate::actions::AdminActions;
 use crate::model::{
-    AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity, ModerationAction, Relay,
-    Report, ReportState,
+    AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity, ModerationAction, Report,
+    ReportState,
 };
 use crate::rest::{RestInstance, Transport};
 use crate::{Error, Result};
@@ -91,22 +91,6 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         });
         let request = self.post_body(url, "application/json", body.to_string().into_bytes());
         self.fetch(request).await
-    }
-
-    async fn relays(&self) -> Result<Vec<Relay>> {
-        let url = self.url("/api/v1/admin/relays")?;
-        self.fetch(self.get(url)).await
-    }
-
-    async fn add_relay(&self, inbox_url: &str) -> Result<Relay> {
-        let url = self.url("/api/v1/admin/relays")?;
-        let form = vec![("inbox_url", inbox_url.to_owned())];
-        self.fetch(self.post_form(url, &form)).await
-    }
-
-    async fn remove_relay(&self, id: &str) -> Result<()> {
-        let url = self.url(&format!("/api/v1/admin/relays/{id}"))?;
-        self.fetch(self.delete(url)).await
     }
 
     async fn domain_allows(&self, limit: u16) -> Result<Vec<DomainAllow>> {

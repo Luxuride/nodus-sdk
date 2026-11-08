@@ -255,18 +255,11 @@ pub struct AdminMeasure {
 pub struct MeasurePoint {
     #[serde(default)]
     pub date: String,
+    /// A **string** on the wire, like every other count Mastodon sends: the dashboard
+    /// answers `{"date":"2026-11-01","value":"0"}`, and a `u64` here rejects the whole
+    /// payload with `invalid type: string "0", expected u64`.
     #[serde(default)]
-    pub value: u64,
-}
-
-/// A relay this instance follows, or asks to follow.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Relay {
-    pub id: String,
-    #[serde(default)]
-    pub state: String,
-    #[serde(default)]
-    pub inbox_url: String,
+    pub value: String,
 }
 
 /// A domain whose federation this instance allows even when it blocks federation

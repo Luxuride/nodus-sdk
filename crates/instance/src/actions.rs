@@ -23,7 +23,7 @@ use core::future::Future;
 use crate::model::{
     Account, AdminAccount, AdminMeasure, Announcement, Conversation, DomainAllow, DomainBlock,
     DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry, InstanceInfo, List,
-    LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship, Relay,
+    LocalId, MediaAttachment, ModerationAction, Page, PageParams, Preferences, Relationship,
     Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
 };
 
@@ -382,10 +382,9 @@ pub trait AdminActions {
         start_at: &str,
         end_at: &str,
     ) -> impl Future<Output = Result<Vec<AdminMeasure>, Self::Error>>;
-    /// Relays this instance follows.
-    fn relays(&self) -> impl Future<Output = Result<Vec<Relay>, Self::Error>>;
-    fn add_relay(&self, inbox_url: &str) -> impl Future<Output = Result<Relay, Self::Error>>;
-    fn remove_relay(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+    // Relays are deliberately absent: Mastodon documents no relay endpoint
+    // (`/methods/admin/relays/` is itself a 404) and `/api/v1/admin/relays` answers the
+    // instance's HTML 404 page. Following a relay is a web-UI action only.
     /// Domains allowed through a general block.
     fn domain_allows(
         &self,
