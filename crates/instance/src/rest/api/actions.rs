@@ -199,6 +199,32 @@ impl<T: Transport> AccountActions for RestInstance<T> {
     }
 }
 
+/// The boundary of every upload. It must not appear in the file's bytes; the
+/// payload is checked against it in `multipart_body`.
+const UPLOAD_BOUNDARY: &str = "nodus-upload-boundary";
+
+impl<T: Transport> RestInstance<T> {
+    /// The exact request `upload_media` would send.
+    ///
+    /// A browser can send this itself with `XMLHttpRequest` to watch the bytes leave
+    /// the machine, which is the only way to show real upload progress — `fetch`, and
+    /// therefore every HTTP client built on it, reports nothing until it is done.
+    pub fn media_upload_request(
+        &self,
+        bytes: &[u8],
+        mime: &str,
+        description: Option<&str>,
+    ) -> Result<crate::rest::HttpRequest> {
+        let url = self.url("/api/v2/media")?;
+        let body = multipart_body(UPLOAD_BOUNDARY, bytes, mime, description);
+        Ok(self.post_body(
+            url,
+            &format!("multipart/form-data; boundary={UPLOAD_BOUNDARY}"),
+            body,
+        ))
+    }
+}
+
 impl<T: Transport> RestInstance<T> {
     /// The six account verbs that all answer with a relationship.
     async fn account_verb(&self, id: &str, verb: &str) -> Result<Relationship> {
@@ -239,14 +265,11 @@ impl<T: Transport> MediaActions for RestInstance<T> {
         mime: &str,
         description: Option<&str>,
     ) -> Result<MediaAttachment> {
-        // The boundary must not appear in the file; a fixed one that the byte payload is
-        // checked against is cheaper than a random one and just as correct here.
-        const BOUNDARY: &str = "nodus-upload-boundary";
         let url = self.url("/api/v2/media")?;
-        let body = multipart_body(BOUNDARY, bytes, mime, description);
+        let body = multipart_body(UPLOAD_BOUNDARY, bytes, mime, description);
         let request = self.post_body(
             url,
-            &format!("multipart/form-data; boundary={BOUNDARY}"),
+            &format!("multipart/form-data; boundary={UPLOAD_BOUNDARY}"),
             body,
         );
         self.fetch(request).await
