@@ -7,12 +7,10 @@
 //! instance's HTML error page, which reads like "this account cannot moderate" and cost
 //! a debugging session, so each path below is spelled out rather than derived.
 
-use std::fmt::Write as _;
-
 use crate::actions::AdminActions;
 use crate::model::{
-    AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity,
-    ModerationAction, Relay, Report, ReportState,
+    AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity, ModerationAction, Relay,
+    Report, ReportState,
 };
 use crate::rest::{RestInstance, Transport};
 use crate::{Error, Result};
@@ -82,12 +80,17 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         start_at: &str,
         end_at: &str,
     ) -> Result<Vec<AdminMeasure>> {
-        let mut path = format!("/api/v2/admin/measures?start_at={start_at}&end_at={end_at}");
-        for key in keys {
-            let _ = write!(path, "&keys[]={key}");
-        }
-        let url = self.url(&path)?;
-        self.fetch(self.get(url)).await
+        // `POST /api/v1/admin/measures` with a **JSON body**, not a GET with a query:
+        // the GET form answers the instance's HTML 404 page, and so does v2. The keys
+        // are an array in the body, which is also why there is no `keys[]` escaping here.
+        let url = self.url("/api/v1/admin/measures")?;
+        let body = serde_json::json!({
+            "keys": keys,
+            "start_at": start_at,
+            "end_at": end_at,
+        });
+        let request = self.post_body(url, "application/json", body.to_string().into_bytes());
+        self.fetch(request).await
     }
 
     async fn relays(&self) -> Result<Vec<Relay>> {
@@ -132,20 +135,30 @@ mod tests {
     use crate::model::ReportState;
     use crate::rest::{HttpRequest, HttpResponse};
 
-    /// Records the URL of every request and answers with an empty list.
+    /// One recorded request: verb, absolute URL, decoded body.
+    type Sent = (String, String, Option<String>);
+
+    /// Records `(verb, url, body)` of every request and answers with an empty list.
     ///
     /// The point of this fake is the *path*, not the payload: a wrong admin prefix
     /// answers with the instance's HTML 404 page, which looks exactly like a permission
     /// problem to whoever is holding the token.
     #[derive(Clone, Default)]
-    struct Recording(Rc<RefCell<Vec<String>>>);
+    struct Recording(Rc<RefCell<Vec<Sent>>>);
 
     impl Transport for Recording {
         fn send(
             &self,
             request: HttpRequest,
         ) -> impl core::future::Future<Output = Result<HttpResponse>> {
-            self.0.borrow_mut().push(request.url.to_string());
+            self.0.borrow_mut().push((
+                request.method.as_str().to_owned(),
+                request.url.to_string(),
+                request
+                    .body
+                    .as_ref()
+                    .map(|bytes| String::from_utf8_lossy(bytes).into_owned()),
+            ));
             core::future::ready(Ok(HttpResponse {
                 status: 200,
                 retry_after_s: None,
@@ -154,7 +167,7 @@ mod tests {
         }
     }
 
-    fn instance() -> (RestInstance<Recording>, Rc<RefCell<Vec<String>>>) {
+    fn instance() -> (RestInstance<Recording>, Rc<RefCell<Vec<Sent>>>) {
         let recording = Recording::default();
         let seen = Rc::clone(&recording.0);
         let instance = crate::Instance::parse("https://mastodon.example").expect("valid host");
@@ -177,7 +190,7 @@ mod tests {
     fn reports_are_asked_where_mastodon_serves_them() {
         let (instance, seen) = instance();
         block_on(instance.reports(ReportState::Open, 1)).expect("recorded");
-        let first = seen.borrow()[0].clone();
+        let first = seen.borrow()[0].1.clone();
         assert!(
             first.starts_with("https://mastodon.example/api/v1/admin/reports?state=open"),
             "reports are `/api/v1/admin/reports`, got {first}"
@@ -185,15 +198,29 @@ mod tests {
     }
 
     #[test]
-    fn measures_are_asked_under_v2() {
+    fn measures_are_posted_as_json_to_v1() {
         let (instance, seen) = instance();
-        // The dashboard aggregates are the one piece of moderation Mastodon serves
-        // under `/api/v2`, which is the detail this test exists to keep pinned.
-        let _ = block_on(instance.measures(&["new_users"], "2024-01-01", "2024-01-08"));
-        let first = seen.borrow()[0].clone();
+        // A GET with `?keys[]=` answers the instance's HTML 404 page: the dashboard
+        // aggregates are a POST with a JSON body. This test pins both halves.
+        let mut future = core::pin::pin!(instance.measures(
+            &["new_users", "interactions"],
+            "2024-01-01",
+            "2024-01-08"
+        ));
+        let mut context = core::task::Context::from_waker(core::task::Waker::noop());
+        let _ = future.as_mut().poll(&mut context);
+        let requests = seen.borrow().clone();
+        let (method, url, body) = &requests[0];
+        assert_eq!(method, "POST", "measures are a POST");
         assert!(
-            first.starts_with("https://mastodon.example/api/v2/admin/measures"),
-            "measures are `/api/v2/admin/measures`, got {first}"
+            url.starts_with("https://mastodon.example/api/v1/admin/measures"),
+            "measures are `/api/v1/admin/measures`, got {url}"
         );
+        let body = body.clone().unwrap_or_default();
+        assert!(
+            body.contains("\"new_users\""),
+            "keys go in the body: {body}"
+        );
+        assert!(body.contains("\"start_at\":\"2024-01-01\""), "{body}");
     }
 }
