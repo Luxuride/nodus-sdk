@@ -31,6 +31,7 @@ pub mod shell;
 pub use clock::{Clock, FixedClock, SystemClock};
 pub use driver::Driver;
 pub use error::SdkError;
+pub use reads::{Answer, Headless, Reads, Want};
 pub use scheduler::{Budget, Plan, Scheduler, StreamPhase};
 pub use sdk::{Drive, Sdk};
 pub use shell::{ShellSdk, Unavailable, UnavailableBackend, shell_sdk};

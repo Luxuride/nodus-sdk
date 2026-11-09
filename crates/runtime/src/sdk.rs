@@ -4,9 +4,11 @@ use web_time::Instant;
 
 use nodus_instance::StreamEvent;
 use nodus_instance::actions::{
-    AccountActions, Browse, FilterActions, HighlightActions, ScheduleActions, Search,
+    AccountActions, Browse, FilterActions, HighlightActions, ScheduleActions, Search as SearchApi,
 };
-use nodus_instance::model::{Account, Notification, Page, Status};
+use nodus_instance::model::{
+    Account, Context, List, LocalId, Notification, Page, ScheduledStatus, SearchResults, Status,
+};
 use nodus_instance::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_protocol::Capabilities;
@@ -802,7 +804,7 @@ where
     I: InstanceApi
         + Browse<Error = <I as InstanceApi>::Error>
         + AccountActions<Error = <I as InstanceApi>::Error>
-        + Search<Error = <I as InstanceApi>::Error>
+        + SearchApi<Error = <I as InstanceApi>::Error>
         + ScheduleActions<Error = <I as InstanceApi>::Error>
         + FilterActions<Error = <I as InstanceApi>::Error>
         + HighlightActions<Error = <I as InstanceApi>::Error>,
@@ -1087,9 +1089,19 @@ where
 #[cfg(test)]
 mod tests;
 
-impl<I: InstanceApi, D, P, C> Reads for Sdk<I, D, P, C> {
-    type Error = I::Error;
+impl<I, D, P, C> Reads for Sdk<I, D, P, C>
+where
+    I: InstanceApi
+        + Browse<Error = <I as InstanceApi>::Error>
+        + SearchApi<Error = <I as InstanceApi>::Error>
+        + ScheduleActions<Error = <I as InstanceApi>::Error>,
+{
+    type Error = <I as InstanceApi>::Error;
 
+    // The store is the browser's answer; this trait is the *wire* answer, so the SDK
+    // implements it exactly as the headless client does. That is the point of one trait:
+    // the server's first paint and a browser screen describe the same reads, and a page
+    // that works on one is not a different code path on the other.
     async fn home(&self, params: PageParams) -> Result<Page<Status>, Self::Error> {
         self.instance.timeline(StreamKind::User, params).await
     }
@@ -1100,5 +1112,59 @@ impl<I: InstanceApi, D, P, C> Reads for Sdk<I, D, P, C> {
 
     async fn status(&self, id: &str) -> Result<Status, Self::Error> {
         self.instance.status(id).await
+    }
+
+    async fn timeline(
+        &self,
+        kind: StreamKind,
+        params: PageParams,
+    ) -> Result<Page<Status>, Self::Error> {
+        self.instance.timeline(kind, params).await
+    }
+
+    async fn context(&self, id: &str) -> Result<Context, Self::Error> {
+        self.instance.status_context(id).await
+    }
+
+    async fn account(&self, id: &str) -> Result<Account, Self::Error> {
+        self.instance.account(&LocalId(id.to_owned())).await
+    }
+
+    async fn account_statuses(
+        &self,
+        id: &str,
+        params: PageParams,
+    ) -> Result<Page<Status>, Self::Error> {
+        self.instance
+            .account_statuses(&LocalId(id.to_owned()), params)
+            .await
+    }
+
+    async fn conversations(&self, params: PageParams) -> Result<Page<Conversation>, Self::Error> {
+        self.instance.conversations(params).await
+    }
+
+    async fn favourites(&self, params: PageParams) -> Result<Page<Status>, Self::Error> {
+        self.instance.favourites(params).await
+    }
+
+    async fn bookmarks(&self, params: PageParams) -> Result<Page<Status>, Self::Error> {
+        self.instance.bookmarks(params).await
+    }
+
+    async fn lists(&self) -> Result<Vec<List>, Self::Error> {
+        self.instance.lists().await
+    }
+
+    async fn scheduled(&self) -> Result<Vec<ScheduledStatus>, Self::Error> {
+        self.instance.scheduled().await
+    }
+
+    async fn directory(&self, local_only: bool, offset: u32) -> Result<Vec<Account>, Self::Error> {
+        self.instance.directory(local_only, offset).await
+    }
+
+    async fn search(&self, query: &str, resolve: bool) -> Result<SearchResults, Self::Error> {
+        self.instance.search(query, resolve).await
     }
 }

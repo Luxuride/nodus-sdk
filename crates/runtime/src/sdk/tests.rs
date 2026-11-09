@@ -167,6 +167,14 @@ impl Pages {
 }
 
 impl InstanceApi for Pages {
+    fn credential_account(
+        &self,
+    ) -> impl core::future::Future<
+        Output = Result<nodus_instance::CredentialAccount, <Self as InstanceApi>::Error>,
+    > {
+        core::future::ready(Err(Unavailable))
+    }
+
     type Error = Unavailable;
 
     fn verify_credentials(

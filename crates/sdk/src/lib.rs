@@ -27,8 +27,8 @@
 pub use nodus_instance::InstanceApi;
 pub use nodus_persist::{CacheKey, MemoryPersistence, Persistence, PersistenceError};
 pub use nodus_runtime::{
-    Budget, Clock, Drive, Driver, FixedClock, Plan, Scheduler, Sdk, SdkError, ShellSdk,
-    StreamPhase, SystemClock, Unavailable, UnavailableBackend, shell_sdk,
+    Answer, Budget, Clock, Drive, Driver, FixedClock, Headless, Plan, Reads, Scheduler, Sdk,
+    SdkError, ShellSdk, StreamPhase, SystemClock, Unavailable, UnavailableBackend, Want, shell_sdk,
 };
 pub use nodus_state::{
     AppState, Command, Degraded, Discovery, DwellTracker, FeedState, Handle, MAX_DWELL_MS,
@@ -65,6 +65,11 @@ pub mod error {
 /// The observable [`Handle`](crate::Handle) state lives in.
 pub mod handle {
     pub use nodus_state::handle::*;
+}
+
+/// The reads both clients answer: the wire trait and its headless implementation.
+pub mod reads {
+    pub use nodus_runtime::reads::*;
 }
 
 /// The cache port, its keys and the in-memory adapter.
