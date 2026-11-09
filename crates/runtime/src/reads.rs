@@ -9,8 +9,8 @@
 use nodus_instance::InstanceApi;
 use nodus_instance::actions::{Browse, ScheduleActions, Search as SearchApi};
 use nodus_instance::model::{
-    Account, Context, Conversation, List, LocalId, Notification, Page, PageParams,
-    ScheduledStatus, SearchResults, Status, StreamKind,
+    Account, Context, Conversation, List, LocalId, Notification, Page, PageParams, ScheduledStatus,
+    SearchResults, Status, StreamKind,
 };
 
 /// One read a page asks for, as data.
@@ -156,7 +156,11 @@ pub trait Reads {
     async fn status(&self, id: &str) -> Result<Status, Self::Error>;
 
     /// A timeline: the home one, or the local/federated public one.
-    async fn timeline(&self, kind: StreamKind, params: PageParams) -> Result<Page<Status>, Self::Error>;
+    async fn timeline(
+        &self,
+        kind: StreamKind,
+        params: PageParams,
+    ) -> Result<Page<Status>, Self::Error>;
 
     /// The replies above and below a status.
     async fn context(&self, id: &str) -> Result<Context, Self::Error>;
@@ -165,8 +169,11 @@ pub trait Reads {
     async fn account(&self, id: &str) -> Result<Account, Self::Error>;
 
     /// An account's statuses, newest first.
-    async fn account_statuses(&self, id: &str, params: PageParams)
-        -> Result<Page<Status>, Self::Error>;
+    async fn account_statuses(
+        &self,
+        id: &str,
+        params: PageParams,
+    ) -> Result<Page<Status>, Self::Error>;
 
     /// Direct messages, grouped by conversation.
     async fn conversations(&self, params: PageParams) -> Result<Page<Conversation>, Self::Error>;
@@ -212,14 +219,17 @@ pub trait Reads {
             Want::Conversations { params } => {
                 Answer::Conversations(Box::new(self.conversations(params.clone()).await?))
             }
-            Want::Favourites { params } => Answer::Statuses(Box::new(self.favourites(params.clone()).await?)),
-            Want::Bookmarks { params } => Answer::Statuses(Box::new(self.bookmarks(params.clone()).await?)),
+            Want::Favourites { params } => {
+                Answer::Statuses(Box::new(self.favourites(params.clone()).await?))
+            }
+            Want::Bookmarks { params } => {
+                Answer::Statuses(Box::new(self.bookmarks(params.clone()).await?))
+            }
             Want::Lists => Answer::Lists(self.lists().await?),
             Want::Scheduled => Answer::Scheduled(self.scheduled().await?),
-            Want::Directory {
-                local_only,
-                offset,
-            } => Answer::Accounts(self.directory(*local_only, *offset).await?),
+            Want::Directory { local_only, offset } => {
+                Answer::Accounts(self.directory(*local_only, *offset).await?)
+            }
             Want::Search { query, resolve } => {
                 Answer::Search(Box::new(self.search(query, *resolve).await?))
             }
@@ -278,7 +288,11 @@ where
         self.instance.status(id).await
     }
 
-    async fn timeline(&self, kind: StreamKind, params: PageParams) -> Result<Page<Status>, Self::Error> {
+    async fn timeline(
+        &self,
+        kind: StreamKind,
+        params: PageParams,
+    ) -> Result<Page<Status>, Self::Error> {
         self.instance.timeline(kind, params).await
     }
 
@@ -290,8 +304,14 @@ where
         self.instance.account(&LocalId(id.to_owned())).await
     }
 
-    async fn account_statuses(&self, id: &str, params: PageParams) -> Result<Page<Status>, Self::Error> {
-        self.instance.account_statuses(&LocalId(id.to_owned()), params).await
+    async fn account_statuses(
+        &self,
+        id: &str,
+        params: PageParams,
+    ) -> Result<Page<Status>, Self::Error> {
+        self.instance
+            .account_statuses(&LocalId(id.to_owned()), params)
+            .await
     }
 
     async fn conversations(&self, params: PageParams) -> Result<Page<Conversation>, Self::Error> {
