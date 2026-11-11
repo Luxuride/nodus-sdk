@@ -138,8 +138,66 @@ pub struct PostItem {
     pub replies_count: i64,
     /// Instance the post lives on, so the client can link to it.
     pub instance_host: String,
+    /// Permalink on the instance that issued the status, when it has one.
+    #[serde(default)]
+    pub url: String,
+    /// The author's profile URL, already resolved to their own instance.
+    #[serde(default)]
+    pub account_url: String,
+    /// Attached media, in display order.
+    #[serde(default)]
+    pub media: Vec<PostMedia>,
+    /// Whether the media should stay behind a click.
+    #[serde(default)]
+    pub sensitive: bool,
+    /// Content warning, plain text.
+    #[serde(default)]
+    pub spoiler_text: String,
+    /// Custom emoji used in the post body.
+    #[serde(default)]
+    pub emojis: Vec<PostEmoji>,
     /// Why this post, in the same shape as an account reason.
     pub reason: Reason,
+}
+
+/// One attachment on a recommended post.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PostMedia {
+    /// Instance-local media id.
+    pub id: String,
+    /// Mastodon's `type` field, lower-case.
+    #[serde(rename = "type")]
+    pub kind: String,
+    /// The file.
+    #[serde(default)]
+    pub url: Option<String>,
+    /// A smaller copy, for grids.
+    #[serde(default)]
+    pub preview_url: Option<String>,
+    /// Alt text.
+    #[serde(default)]
+    pub description: Option<String>,
+    /// Blurhash placeholder.
+    #[serde(default)]
+    pub blurhash: Option<String>,
+    /// Width in pixels.
+    #[serde(default)]
+    pub meta_width: Option<u32>,
+    /// Height in pixels.
+    #[serde(default)]
+    pub meta_height: Option<u32>,
+}
+
+/// One custom emoji used in a recommended post.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PostEmoji {
+    /// `:shortcode:` without colons.
+    pub shortcode: String,
+    /// Image URL.
+    pub url: String,
+    /// Animated copy, when present.
+    #[serde(default)]
+    pub static_url: Option<String>,
 }
 
 /// A page of recommended posts.
