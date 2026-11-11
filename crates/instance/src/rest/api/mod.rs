@@ -68,6 +68,12 @@ impl<T: Transport> InstanceApi for RestInstance<T> {
         self.fetch(self.get(url)).await
     }
 
+    async fn account_lookup(&self, acct: &str) -> Result<Account> {
+        let mut url = self.url("/api/v1/accounts/lookup")?;
+        url.query_pairs_mut().append_pair("acct", acct);
+        self.fetch(self.get(url)).await
+    }
+
     async fn account_statuses(&self, id: &LocalId, params: PageParams) -> Result<Page<Status>> {
         let url = self.page_url(&format!("/api/v1/accounts/{}/statuses", id.0), &params)?;
         self.fetch_page(self.get(url), &params).await

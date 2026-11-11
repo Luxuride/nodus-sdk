@@ -69,6 +69,12 @@ pub trait InstanceApi {
     /// One account.
     fn account(&self, id: &LocalId) -> impl Future<Output = Result<Account, Self::Error>>;
 
+    /// Resolve a local or remote `acct` on the instance that owns the token.
+    ///
+    /// The lookup endpoint is public on Mastodon; it is how an origin-first crawler
+    /// turns `user@host` into the account id that host uses in its own API.
+    fn account_lookup(&self, acct: &str) -> impl Future<Output = Result<Account, Self::Error>>;
+
     /// An account's statuses.
     fn account_statuses(
         &self,
