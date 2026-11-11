@@ -120,8 +120,12 @@ pub struct PostItem {
     pub item_id: i64,
     /// The status id at its own instance, as a string (Mastodon ids are opaque).
     pub status_id: String,
+    /// The status id on the author's own instance, for a local thread link.
+    pub status_remote_id: String,
     /// Author's `acct`, fully qualified with the instance.
     pub account_acct: String,
+    /// The author's own instance id, for a local profile link.
+    pub account_remote_id: String,
     /// Author's display name, already falling back to `acct` when empty.
     pub account_display_name: String,
     /// Author's avatar URL, or empty when the instance sent none.

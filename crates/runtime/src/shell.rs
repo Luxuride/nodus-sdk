@@ -85,6 +85,10 @@ impl InstanceApi for UnavailableBackend {
         unavailable()
     }
 
+    fn account_lookup(&self, _acct: &str) -> impl Future<Output = Result<Account, Self::Error>> {
+        unavailable()
+    }
+
     fn account_statuses(
         &self,
         _id: &LocalId,
