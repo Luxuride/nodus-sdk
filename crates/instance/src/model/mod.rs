@@ -22,7 +22,8 @@ pub use admin::{
 pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword, Verdict, judge};
 pub use highlights::{FeaturedTag, Rule};
 pub use instance::{
-    InstanceContact, InstanceInfo, InstanceThumbnail, Registrations, Usage, UsageUsers,
+    Configuration, InstanceContact, InstanceInfo, InstanceThumbnail, Registrations, Statuses,
+    Usage, UsageUsers,
 };
 pub use interaction::{
     Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,

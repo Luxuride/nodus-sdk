@@ -34,6 +34,54 @@ pub struct InstanceInfo {
     pub usage: Option<Usage>,
     #[serde(default)]
     pub rules: Vec<Rule>,
+    /// Server limits, when the instance reports them.
+    #[serde(default)]
+    pub configuration: Option<Configuration>,
+}
+
+/// The parts of an instance's configuration this client reads.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Configuration {
+    /// Post limits.
+    #[serde(default)]
+    pub statuses: Option<Statuses>,
+}
+
+/// What an instance accepts in one post.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Statuses {
+    /// The longest body, in characters.
+    #[serde(default)]
+    pub max_characters: Option<u64>,
+    /// The most attachments one post may carry.
+    #[serde(default)]
+    pub max_media_attachments: Option<u64>,
+}
+
+impl InstanceInfo {
+    /// The instance's post length, or Mastodon's default when it does not say.
+    #[must_use]
+    pub fn max_characters(&self) -> usize {
+        self.configuration
+            .as_ref()
+            .and_then(|configuration| configuration.statuses.as_ref())
+            .and_then(|statuses| statuses.max_characters)
+            .and_then(|limit| usize::try_from(limit).ok())
+            .filter(|limit| *limit > 0)
+            .unwrap_or(500)
+    }
+
+    /// The instance's attachment count, or Mastodon's default.
+    #[must_use]
+    pub fn max_media_attachments(&self) -> usize {
+        self.configuration
+            .as_ref()
+            .and_then(|configuration| configuration.statuses.as_ref())
+            .and_then(|statuses| statuses.max_media_attachments)
+            .and_then(|limit| usize::try_from(limit).ok())
+            .filter(|limit| *limit > 0)
+            .unwrap_or(4)
+    }
 }
 
 /// The banner an instance publishes.
