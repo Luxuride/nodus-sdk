@@ -72,6 +72,15 @@ pub struct Account {
     /// Last status timestamp, RFC 3339.
     #[serde(default)]
     pub last_status_at: Option<String>,
+    /// Whether the account opted into discovery features.
+    #[serde(default)]
+    pub discoverable: Option<bool>,
+    /// Whether public posts may be indexed by search engines.
+    #[serde(default)]
+    pub indexable: Option<bool>,
+    /// Deprecated inverse of `indexable`; older instances still send it.
+    #[serde(default)]
+    pub noindex: Option<bool>,
 }
 
 /// A thread around one status: what it replies to, and what replies to it.
