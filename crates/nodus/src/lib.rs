@@ -31,11 +31,13 @@ pub mod batch;
 pub mod capabilities;
 pub mod events;
 pub mod plan;
+pub mod state_sync;
 
 pub use batch::{BatchCall, BatchResponse, BatchResult, Verb};
 pub use capabilities::{Capabilities, Feature};
 pub use events::{Event, EventKind, Subscription};
 pub use plan::{Need, Plan, Surface, choose};
+pub use state_sync::{StateSyncRequest, StateSyncResponse, SyncEvent, SyncStatus};
 
 /// The header carrying the contract version on every Nodus call.
 pub const CONTRACT_HEADER: &str = "X-Contract-Version";
