@@ -616,6 +616,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nodus-federation"
+version = "0.1.0"
+dependencies = [
+ "nodus-activitypub-sdk",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "nodus-instance"
 version = "0.1.0"
 dependencies = [
@@ -667,7 +678,9 @@ dependencies = [
 name = "nodus-sdk"
 version = "0.1.0"
 dependencies = [
+ "nodus-activitypub-sdk",
  "nodus-discovery",
+ "nodus-federation",
  "nodus-instance",
  "nodus-persist",
  "nodus-runtime",

@@ -228,6 +228,29 @@ impl InstanceApi for Pages {
         fail::<Account>()
     }
 
+    fn account_lookup(
+        &self,
+        _acct: &str,
+    ) -> impl core::future::Future<Output = Result<Account, Self::Error>> {
+        fail::<Account>()
+    }
+
+    fn account_followers(
+        &self,
+        _id: &LocalId,
+        _params: PageParams,
+    ) -> impl core::future::Future<Output = Result<Page<Account>, Self::Error>> {
+        fail::<Page<Account>>()
+    }
+
+    fn account_following(
+        &self,
+        _id: &LocalId,
+        _params: PageParams,
+    ) -> impl core::future::Future<Output = Result<Page<Account>, Self::Error>> {
+        fail::<Page<Account>>()
+    }
+
     fn account_statuses(
         &self,
         _id: &LocalId,

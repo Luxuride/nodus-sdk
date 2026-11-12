@@ -1,6 +1,6 @@
 [package]
 name = "nodus-sdk"
-description = "Client-side Mastodon state store: the source of truth the web client renders"
+description = "The overall Nodus SDK: state runtime plus optional ActivityPub and federation layers"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,12 +10,19 @@ repository.workspace = true
 
 # The facade owns no logic: every dependency below is re-exported so a consumer
 # can reach the pieces without adding a crate line per layer.
+[features]
+default = []
+activitypub = ["dep:nodus-activitypub-sdk"]
+federation = ["activitypub", "dep:nodus-federation"]
+
 [dependencies]
 nodus-discovery = { workspace = true }
 nodus-instance = { workspace = true }
 nodus-persist = { workspace = true }
 nodus-runtime = { workspace = true }
 nodus-state = { workspace = true }
+nodus-activitypub-sdk = { workspace = true, optional = true }
+nodus-federation = { workspace = true, optional = true }
 
 [lints]
 workspace = true

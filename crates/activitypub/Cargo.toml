@@ -1,6 +1,6 @@
 [package]
 name = "nodus-activitypub-sdk"
-description = "ActivityPub objects, the public reader, and the federation primitives."
+description = "ActivityPub objects and the public reader."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,7 +12,6 @@ repository.workspace = true
 default = ["read"]
 read = []
 native = ["read", "dep:reqwest"]
-federation = ["read"]
 
 [dependencies]
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "webpki-roots"], optional = true }

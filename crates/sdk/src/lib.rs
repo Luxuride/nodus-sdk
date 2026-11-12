@@ -1,8 +1,9 @@
 //! Client-side Mastodon state store: the source of truth the web client renders.
 //!
-//! This crate is a facade. It owns no types and no logic: every item below is a
-//! re-export, so `use nodus_sdk::{…}` keeps working while the implementation is
-//! split across `nodus-state` (the state tree and its command vocabulary),
+//! This crate is the overall SDK library. It owns no protocol logic: the client half is
+//! the runtime/state machine below, and the federation half is opt-in through the
+//! `activitypub` and `federation` features. `use nodus_sdk::{…}` stays the entry point
+//! while the implementation is split across `nodus-state` (the state tree and its command vocabulary),
 //! `nodus-runtime` (the `Sdk<I, D, P, C>` state machine), `nodus-persist` (the
 //! cache port), `nodus-instance` (the instance surface as traits) and
 //! `nodus-discovery` (our recommendation API transport).
@@ -35,6 +36,14 @@ pub use nodus_state::{
     MAX_EVENTS_PER_BATCH, PostFeedState, Session, StreamState, Subscription, Timeline, TimelineKey,
     TimelinePage, TimelineRequest,
 };
+
+/// ActivityPub objects and the public reader.
+#[cfg(feature = "activitypub")]
+pub use nodus_activitypub_sdk as activitypub;
+
+/// Federation activities, signatures, delivery and inbox ports.
+#[cfg(feature = "federation")]
+pub use nodus_federation as federation;
 
 /// Pages other than timelines: notifications, messages, saved posts, people, search.
 pub mod page {

@@ -1,16 +1,14 @@
-//! ActivityPub objects and the public half of federation.
+//! ActivityPub objects and the public reader.
 //!
 //! This crate is deliberately separate from [`nodus-instance`](../nodus_instance/index.html):
 //! Mastodon's REST API and ActivityPub are different protocols with different shapes, and
 //! keeping them apart stops one protocol's quirks leaking into the other. The native
-//! client only reads public objects; signing and delivering activities is a later layer.
+//! client only reads public objects; signing and delivering activities live in `nodus-federation`.
 
 #[cfg(feature = "read")]
 pub mod actor;
 #[cfg(feature = "read")]
 pub mod collection;
-#[cfg(feature = "federation")]
-pub mod federation;
 #[cfg(feature = "read")]
 pub mod note;
 
@@ -23,8 +21,6 @@ pub use actor::{Actor, Emoji, Image};
 pub use client::ActivityPub;
 #[cfg(feature = "read")]
 pub use collection::{Collection, CollectionPage};
-#[cfg(feature = "federation")]
-pub use federation::{Activity, Delivery, Inbox};
 #[cfg(feature = "read")]
 pub use note::{Attachment, Note};
 
