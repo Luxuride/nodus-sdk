@@ -9,11 +9,8 @@
 //!
 //! No HTTP stack, vendor endpoint, or Mastodon-only field belongs here. Mastodon
 //! and Misskey implement these traits in their own compatibility crates, and
-//! `ActivityPub` objects convert into this model through `nodus-activitypub-sdk`.
 
 pub mod actions;
-#[cfg(feature = "activitypub")]
-pub mod activity;
 pub mod api;
 pub mod model;
 pub mod rest;

@@ -1,6 +1,6 @@
 [package]
 name = "nodus-client-sdk"
-description = "The Nodus client SDK: shared state runtime and optional ActivityPub, federation, Mastodon and Misskey layers"
+description = "The Nodus client SDK: shared state runtime with Mastodon and Misskey adapters"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,11 +12,8 @@ repository.workspace = true
 # can reach the pieces without adding a crate line per layer.
 [features]
 default = []
-activitypub = ["dep:nodus-activitypub-sdk", "nodus-client-core/activitypub"]
 misskey = ["dep:nodus-misskey"]
-federation = ["activitypub", "dep:nodus-federation"]
 mastodon = ["dep:nodus-mastodon"]
-federation-crypto = ["federation", "nodus-federation/crypto"]
 
 [dependencies]
 nodus-discovery = { workspace = true }
@@ -24,9 +21,7 @@ nodus-client-core = { workspace = true }
 nodus-persist = { workspace = true }
 nodus-runtime = { workspace = true }
 nodus-state = { workspace = true }
-nodus-activitypub-sdk = { workspace = true, optional = true }
 nodus-misskey = { workspace = true, optional = true }
-nodus-federation = { workspace = true, optional = true }
 nodus-mastodon = { workspace = true, optional = true }
 
 [lints]

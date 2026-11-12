@@ -11,8 +11,6 @@ members = [
     "crates/state",
     "crates/runtime",
     "crates/client-sdk",
-    "crates/activitypub",
-    "crates/federation",
 ]
 
 [workspace.package]
@@ -34,8 +32,6 @@ nodus-persist = { path = "crates/persist", version = "0.1.0" }
 nodus-state = { path = "crates/state", version = "0.1.0" }
 nodus-runtime = { path = "crates/runtime", version = "0.1.0" }
 nodus-client-sdk = { path = "crates/client-sdk", version = "0.1.0" }
-nodus-activitypub-sdk = { path = "crates/activitypub", version = "0.1.0" }
-nodus-federation = { path = "crates/federation", version = "0.1.0" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

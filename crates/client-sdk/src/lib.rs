@@ -4,7 +4,7 @@
 //! protocol logic: `nodus-client-core` defines the shared model and operation
 //! traits, `nodus-runtime` runs the state machine, `nodus-state` is the observed
 //! tree, and `nodus-discovery` is the recommendation transport. `ActivityPub`,
-//! federation, Mastodon and Misskey are optional layers around that core.
+//! Mastodon and Misskey are optional protocol adapters around that core.
 //!
 //! ```text
 //! web/mobile/desktop ──► nodus-client-sdk ──► runtime ──► state
@@ -12,7 +12,7 @@
 //!                                                └► persist ┘
 //!                           client-core (model + traits)
 //!                              ▲                 ▲
-//!                     nodus-activitypub   nodus-mastodon / nodus-misskey
+//!                     nodus-mastodon      nodus-misskey
 //! ```
 //!
 //! A consumer picks its transport explicitly: `nodus-mastodon` for a Mastodon
@@ -32,10 +32,6 @@ pub use nodus_state::{
     TimelinePage, TimelineRequest,
 };
 
-/// `ActivityPub` objects and the public reader.
-#[cfg(feature = "activitypub")]
-pub use nodus_activitypub_sdk as activitypub;
-
 /// Mastodon's API, mapped onto the shared client model.
 #[cfg(feature = "mastodon")]
 pub use nodus_mastodon as mastodon;
@@ -43,10 +39,6 @@ pub use nodus_mastodon as mastodon;
 /// Misskey's API, mapped onto the shared client model.
 #[cfg(feature = "misskey")]
 pub use nodus_misskey as misskey;
-
-/// Federation activities, signatures, delivery and inbox ports.
-#[cfg(feature = "federation")]
-pub use nodus_federation as federation;
 
 /// Pages other than timelines: notifications, messages, saved posts, people, search.
 pub mod page {
