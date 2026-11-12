@@ -7,7 +7,7 @@ use nodus_instance::model::{
 use serde_json::Value;
 
 /// Map a Misskey user to the account shape the views render.
-pub(crate) fn account(value: &Value) -> Option<Account> {
+pub fn account(value: &Value) -> Option<Account> {
     let username = value.get("username")?.as_str()?;
     let host = value.get("host").and_then(Value::as_str);
     let acct = host.map_or_else(|| username.to_owned(), |host| format!("{username}@{host}"));
@@ -67,7 +67,7 @@ pub(crate) fn account(value: &Value) -> Option<Account> {
 }
 
 /// Map a Misskey note to the status shape the views render.
-pub(crate) fn status(value: Value) -> Option<Status> {
+pub fn status(value: Value) -> Option<Status> {
     let account = account(value.get("user")?)?;
     let emojis = emojis(&value);
     let files: Vec<MediaAttachment> = value
@@ -76,12 +76,13 @@ pub(crate) fn status(value: Value) -> Option<Status> {
         .map(|files| files.iter().filter_map(media).collect())
         .unwrap_or_default();
     let renote = value.get("renote").cloned().and_then(status);
-    let text = value.get("text").and_then(Value::as_str).unwrap_or_default();
+    let text = value
+        .get("text")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     let cw = value.get("cw").and_then(Value::as_str).unwrap_or_default();
     let reactions = value.get("reactions").and_then(Value::as_object);
-    let favourites = reactions.map_or(0, |map| {
-        map.values().filter_map(Value::as_u64).sum::<u64>()
-    });
+    let favourites = reactions.map_or(0, |map| map.values().filter_map(Value::as_u64).sum::<u64>());
     Some(Status {
         id: string(&value, "id")?,
         created_at: string(&value, "createdAt").unwrap_or_default(),
@@ -109,9 +110,13 @@ pub(crate) fn status(value: Value) -> Option<Status> {
     })
 }
 
-pub(crate) fn notification(value: Value) -> Option<Notification> {
+pub fn notification(value: Value) -> Option<Notification> {
     let account = account(value.get("user")?)?;
-    let kind = match value.get("type").and_then(Value::as_str).unwrap_or_default() {
+    let kind = match value
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+    {
         "follow" => NotificationKind::Follow,
         "receiveFollowRequest" => NotificationKind::FollowRequest,
         "renote" | "quote" => NotificationKind::Reblog,
@@ -130,7 +135,7 @@ pub(crate) fn notification(value: Value) -> Option<Notification> {
     })
 }
 
-pub(crate) fn relationship(value: &Value, id: &LocalId) -> Option<Relationship> {
+pub fn relationship(value: &Value, id: &LocalId) -> Option<Relationship> {
     Some(Relationship {
         id: id.clone(),
         following: boolean(value, "isFollowing"),
@@ -145,7 +150,7 @@ pub(crate) fn relationship(value: &Value, id: &LocalId) -> Option<Relationship> 
     })
 }
 
-pub(crate) fn source(value: &Value) -> CredentialSource {
+pub fn source(value: &Value) -> CredentialSource {
     let visibility = value
         .pointer("/clientData/defaultNoteVisibility")
         .and_then(Value::as_str)
@@ -185,7 +190,11 @@ fn text_html(text: &str, emojis: &[CustomEmoji]) -> String {
 }
 
 fn media(value: &Value) -> Option<MediaAttachment> {
-    let kind = match value.get("type").and_then(Value::as_str).unwrap_or_default() {
+    let kind = match value
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+    {
         "image" => MediaKind::Image,
         "video" => MediaKind::Video,
         "audio" => MediaKind::Audio,
@@ -234,12 +243,18 @@ fn poll(value: Value) -> Option<Poll> {
         .sum::<u64>();
     Some(Poll {
         id: String::new(),
-        expires_at: value.get("expiresAt").and_then(Value::as_str).map(str::to_owned),
+        expires_at: value
+            .get("expiresAt")
+            .and_then(Value::as_str)
+            .map(str::to_owned),
         expired: value
             .get("expiresAt")
             .and_then(Value::as_str)
             .is_some_and(|at| at < "1970-01-01"),
-        multiple: value.get("multiple").and_then(Value::as_bool).unwrap_or(false),
+        multiple: value
+            .get("multiple")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
         votes_count,
         voters_count: None,
         voted: false,
@@ -249,7 +264,7 @@ fn poll(value: Value) -> Option<Poll> {
     })
 }
 
-pub(crate) fn visibility_out(visibility: Visibility) -> &'static str {
+pub fn visibility_out(visibility: Visibility) -> &'static str {
     match visibility {
         Visibility::Public => "public",
         Visibility::Unlisted => "home",

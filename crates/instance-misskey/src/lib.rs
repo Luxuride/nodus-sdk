@@ -14,7 +14,7 @@
     reason = "Misskey wire values are consumed by the mapper, and the port signatures are the Mastodon ones"
 )]
 
-mod convert;
+pub mod convert;
 
 use core::fmt;
 
@@ -78,10 +78,7 @@ impl<T: Transport> MisskeyInstance<T> {
         let url = self.url(path)?;
         let mut headers = vec![("Content-Type".to_owned(), "application/json".to_owned())];
         if !self.token.is_empty() {
-            headers.push((
-                "Authorization".to_owned(),
-                format!("Bearer {}", self.token),
-            ));
+            headers.push(("Authorization".to_owned(), format!("Bearer {}", self.token)));
         }
         let request = HttpRequest {
             method: Method::Post,
@@ -151,10 +148,11 @@ impl<T: Transport> MisskeyInstance<T> {
     }
 
     async fn relation(&self, id: &LocalId) -> Result<Relationship> {
-        let value = self.call("/api/users/relation", json!({ "userId": id.0 })).await?;
-        convert::relationship(&value, id).ok_or_else(|| {
-            Error::Decode("a relation without the other account".to_owned())
-        })
+        let value = self
+            .call("/api/users/relation", json!({ "userId": id.0 }))
+            .await?;
+        convert::relationship(&value, id)
+            .ok_or_else(|| Error::Decode("a relation without the other account".to_owned()))
     }
 }
 
@@ -209,7 +207,9 @@ impl<T: Transport> nodus_instance::InstanceApi for MisskeyInstance<T> {
     }
 
     async fn status(&self, id: &str) -> Result<Status> {
-        let value = self.call("/api/notes/show", json!({ "noteId": id })).await?;
+        let value = self
+            .call("/api/notes/show", json!({ "noteId": id }))
+            .await?;
         convert::status(value).ok_or_else(|| Error::Decode("note is not a status".to_owned()))
     }
 
@@ -244,7 +244,9 @@ impl<T: Transport> nodus_instance::InstanceApi for MisskeyInstance<T> {
     }
 
     async fn notifications(&self, params: PageParams) -> Result<Page<Notification>> {
-        let value = self.call("/api/i/notifications", Self::body(&params)).await?;
+        let value = self
+            .call("/api/i/notifications", Self::body(&params))
+            .await?;
         let items = value
             .as_array()
             .cloned()
@@ -256,12 +258,16 @@ impl<T: Transport> nodus_instance::InstanceApi for MisskeyInstance<T> {
     }
 
     async fn account(&self, id: &LocalId) -> Result<Account> {
-        let value = self.call("/api/users/show", json!({ "userId": id.0 })).await?;
+        let value = self
+            .call("/api/users/show", json!({ "userId": id.0 }))
+            .await?;
         convert::account(&value).ok_or_else(|| Error::Decode("user is not an account".to_owned()))
     }
 
     async fn account_lookup(&self, acct: &str) -> Result<Account> {
-        let (username, host) = acct.split_once('@').map_or((acct, None), |(user, host)| (user, Some(host)));
+        let (username, host) = acct
+            .split_once('@')
+            .map_or((acct, None), |(user, host)| (user, Some(host)));
         let mut body = json!({ "username": username });
         if let Some(host) = host {
             body["host"] = json!(host);
@@ -349,7 +355,8 @@ impl<T: Transport> nodus_instance::InstanceApi for MisskeyInstance<T> {
         }
         let value = self.call("/api/notes/create", body).await?;
         let note = value.get("createdNote").cloned().unwrap_or(value);
-        convert::status(note).ok_or_else(|| Error::Decode("created note is not a status".to_owned()))
+        convert::status(note)
+            .ok_or_else(|| Error::Decode("created note is not a status".to_owned()))
     }
 
     async fn delete_status(&self, id: &str) -> Result<()> {
