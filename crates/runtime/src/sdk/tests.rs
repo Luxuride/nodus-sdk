@@ -1,9 +1,9 @@
 //! Sync consent is state like any other: a command, not a view-local flag.
 
-use nodus_instance::model::{
+use nodus_client_core::model::{
     Account, Context, Draft, LocalId, Notification, Page, PageParams, Relationship, Status,
 };
-use nodus_instance::{InstanceApi, StreamKind};
+use nodus_client_core::{InstanceApi, StreamKind};
 use nodus_shared::{AccountFeed, EventBatch, MeResponse, Meta, PostFeed};
 use nodus_state::{Command, Discovery, SyncConsent, TimelineRequest};
 
@@ -170,7 +170,7 @@ impl InstanceApi for Pages {
     fn credential_account(
         &self,
     ) -> impl core::future::Future<
-        Output = Result<nodus_instance::CredentialAccount, <Self as InstanceApi>::Error>,
+        Output = Result<nodus_client_core::CredentialAccount, <Self as InstanceApi>::Error>,
     > {
         core::future::ready(Err(Unavailable))
     }

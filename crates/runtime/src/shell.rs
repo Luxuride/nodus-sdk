@@ -7,7 +7,7 @@
 
 use core::future::Future;
 
-use nodus_instance::{
+use nodus_client_core::{
     Account, Context, Draft, InstanceApi, LocalId, Notification, Page, PageParams, Relationship,
     Status, StreamKind,
 };
@@ -46,7 +46,8 @@ impl InstanceApi for UnavailableBackend {
 
     fn credential_account(
         &self,
-    ) -> impl Future<Output = Result<nodus_instance::model::CredentialAccount, Self::Error>> {
+    ) -> impl Future<Output = Result<nodus_client_core::model::CredentialAccount, Self::Error>>
+    {
         unavailable()
     }
 

@@ -693,6 +693,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "nodus-client-core"
+version = "0.1.0"
+dependencies = [
+ "nodus-activitypub-sdk",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "url",
+]
+
+[[package]]
+name = "nodus-client-sdk"
+version = "0.1.0"
+dependencies = [
+ "nodus-activitypub-sdk",
+ "nodus-client-core",
+ "nodus-discovery",
+ "nodus-federation",
+ "nodus-mastodon",
+ "nodus-misskey",
+ "nodus-persist",
+ "nodus-runtime",
+ "nodus-state",
+]
+
+[[package]]
 name = "nodus-discovery"
 version = "0.1.0"
 dependencies = [
@@ -723,25 +749,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "nodus-instance"
+name = "nodus-mastodon"
 version = "0.1.0"
 dependencies = [
  "gloo-net",
  "js-sys",
+ "nodus-client-core",
  "reqwest",
  "serde",
  "serde_json",
- "thiserror 2.0.21",
  "url",
  "wasm-bindgen",
  "web-sys",
 ]
 
 [[package]]
-name = "nodus-instance-misskey"
+name = "nodus-misskey"
 version = "0.1.0"
 dependencies = [
- "nodus-instance",
+ "nodus-client-core",
  "serde",
  "serde_json",
  "url",
@@ -770,7 +796,7 @@ name = "nodus-runtime"
 version = "0.1.0"
 dependencies = [
  "js-sys",
- "nodus-instance",
+ "nodus-client-core",
  "nodus-persist",
  "nodus-protocol",
  "nodus-shared",
@@ -778,20 +804,6 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "web-time",
-]
-
-[[package]]
-name = "nodus-sdk"
-version = "0.1.0"
-dependencies = [
- "nodus-activitypub-sdk",
- "nodus-discovery",
- "nodus-federation",
- "nodus-instance",
- "nodus-instance-misskey",
- "nodus-persist",
- "nodus-runtime",
- "nodus-state",
 ]
 
 [[package]]
@@ -805,7 +817,7 @@ dependencies = [
 name = "nodus-state"
 version = "0.1.0"
 dependencies = [
- "nodus-instance",
+ "nodus-client-core",
  "nodus-protocol",
  "nodus-shared",
  "serde",

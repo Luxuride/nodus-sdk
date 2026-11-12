@@ -78,7 +78,7 @@ pub enum MediaKind {
 
 /// One attachment on a status.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct MediaAttachment {
+pub struct Media {
     /// Instance-local id.
     pub id: String,
     /// What it is.
@@ -103,6 +103,9 @@ pub struct MediaAttachment {
     #[serde(default)]
     pub meta_height: Option<u32>,
 }
+
+/// Mastodon's name for [`Media`].
+pub use Media as MediaAttachment;
 
 /// A poll attached to a status.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

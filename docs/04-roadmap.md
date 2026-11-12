@@ -29,7 +29,7 @@ Scope:
 - `InstanceApi` for both targets: `reqwest` (`native` feature, used by the sync
   worker) and `gloo-net` (`wasm` feature, used by the browser), one endpoint
   surface, feature-gated. The split is the intent recorded in
-  `crates/instance/src/lib.rs`; the feature flags themselves and the transport
+  `crates/client-core/src/lib.rs`; the feature flags themselves and the transport
   modules land with this milestone;
 - `Discovery` over our API, both targets, including `meta` cached at boot and the
   `426 client_too_old` path surfacing as `SdkError::ClientTooOld`;

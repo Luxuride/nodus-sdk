@@ -1,0 +1,23 @@
+[package]
+name = "nodus-client-core"
+description = "Nodus's protocol-neutral client model and operation surface; no HTTP, no vendor API"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
+nodus-activitypub-sdk = { workspace = true, optional = true }
+
+[features]
+default = []
+activitypub = ["dep:nodus-activitypub-sdk"]
+
+[lints]
+workspace = true

@@ -12,9 +12,9 @@ The contract and the client state live together because they are one question
 asked at three layers:
 
 - `nodus-shared`: what *our* API returns to clients;
-- `nodus-instance`: what *an instance* returns to both the sync worker and the
+- `nodus-client-core`: what *an instance* returns to both the sync worker and the
   browser;
-- `nodus-sdk`: what the client *does* with both — session, timelines, feed,
+- `nodus-client-sdk`: what the client *does* with both — session, timelines, feed,
   streaming, cache policy.
 
 The last one is the reason this repository is not a passive "contract". If state
@@ -30,8 +30,8 @@ framework dependency, so anything web-only cannot sneak in.
 | Crate | Owns | Does not own |
 | --- | --- | --- |
 | `nodus-shared` | the wire DTOs, `CONTRACT_VERSION`, the shared error envelope and `Meta` | HTTP, retries, any I/O |
-| `nodus-instance` | the Mastodon domain model and `InstanceApi` / `Streaming`, plus instance and app-registration helpers | a chosen transport in the default build |
-| `nodus-sdk` | `AppState`, `Command`, `Sdk<I, D, P, C>`, `Handle`, the four port traits, `SdkError` | rendering, routing, token custody |
+| `nodus-client-core` | the Mastodon domain model and `InstanceApi` / `Streaming`, plus instance and app-registration helpers | a chosen transport in the default build |
+| `nodus-client-sdk` | `AppState`, `Command`, `Sdk<I, D, P, C>`, `Handle`, the four port traits, `SdkError` | rendering, routing, token custody |
 
 Anything that would make one consumer's code the other's problem does not belong
 here. `core` (ranking) stays recommender-only precisely because the client must
@@ -55,7 +55,7 @@ What it explicitly does not do:
 
 ## The five invariants
 
-These are the rules a change to `nodus-sdk` is reviewed against.
+These are the rules a change to `nodus-client-sdk` is reviewed against.
 
 1. **One mutation path.** Views call `Sdk::dispatch(Command)`. There is no other
    way to change state, so "what can happen" is one enum, and every transition is
@@ -86,7 +86,7 @@ These are the rules a change to `nodus-sdk` is reviewed against.
 
 ## Relationship to the Mastodon API
 
-`nodus-instance` models the parts of the instance API the client and the worker
+`nodus-client-core` models the parts of the instance API the client and the worker
 both use. It is not a complete Mastodon client: missing endpoints are added when a
 consumer needs one, in the same additive spirit (a new trait method with a
 default-free requirement is a breaking change for 1.0, which is why the SDK stays

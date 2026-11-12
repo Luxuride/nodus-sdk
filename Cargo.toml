@@ -2,14 +2,15 @@
 resolver = "3"
 members = [
     "crates/shared",
-    "crates/instance",
-    "crates/instance-misskey",
+    "crates/client-core",
+    "crates/mastodon",
+    "crates/misskey",
     "crates/nodus",
     "crates/discovery",
     "crates/persist",
     "crates/state",
     "crates/runtime",
-    "crates/sdk",
+    "crates/client-sdk",
     "crates/activitypub",
     "crates/federation",
 ]
@@ -20,18 +21,19 @@ edition = "2024"
 rust-version = "1.85"
 license = "AGPL-3.0-or-later"
 publish = false
-repository = "https://github.com/nodus-social/nodus-sdk"
+repository = "https://github.com/nodus-social/nodus-client-sdk"
 
 [workspace.dependencies]
 nodus-shared = { path = "crates/shared", version = "0.1.0" }
-nodus-instance = { path = "crates/instance", version = "0.1.0" }
-nodus-instance-misskey = { path = "crates/instance-misskey", version = "0.1.0" }
+nodus-client-core = { path = "crates/client-core", version = "0.1.0" }
+nodus-mastodon = { path = "crates/mastodon", version = "0.1.0" }
+nodus-misskey = { path = "crates/misskey", version = "0.1.0" }
 nodus-protocol = { path = "crates/nodus", version = "0.1.0" }
 nodus-discovery = { path = "crates/discovery", version = "0.1.0" }
 nodus-persist = { path = "crates/persist", version = "0.1.0" }
 nodus-state = { path = "crates/state", version = "0.1.0" }
 nodus-runtime = { path = "crates/runtime", version = "0.1.0" }
-nodus-sdk = { path = "crates/sdk", version = "0.1.0" }
+nodus-client-sdk = { path = "crates/client-sdk", version = "0.1.0" }
 nodus-activitypub-sdk = { path = "crates/activitypub", version = "0.1.0" }
 nodus-federation = { path = "crates/federation", version = "0.1.0" }
 

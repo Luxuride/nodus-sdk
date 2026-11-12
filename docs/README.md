@@ -11,8 +11,8 @@ machine the web client renders. Three crates, and nothing else:
 | Crate | Purpose |
 | --- | --- |
 | `nodus-shared` | our wire DTOs (`AccountFeed`, `EventBatch`, `Meta`, error envelope), `CONTRACT_VERSION`. No I/O, no async, compiles for `wasm32` and `x86_64`. |
-| `nodus-instance` | Mastodon domain model (`Status`, `Account`, `Notification`, `Page`, …) and `InstanceApi`, the instance surface transports implement. |
-| `nodus-sdk` | the client state machine: `AppState`, `Command`, `Sdk<I, D, P, C>` and its four ports. No framework dependency. |
+| `nodus-client-core` | Mastodon domain model (`Status`, `Account`, `Notification`, `Page`, …) and `InstanceApi`, the instance surface transports implement. |
+| `nodus-client-sdk` | the client state machine: `AppState`, `Command`, `Sdk<I, D, P, C>` and its four ports. No framework dependency. |
 
 ## Documents
 

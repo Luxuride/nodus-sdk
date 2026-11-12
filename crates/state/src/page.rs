@@ -6,7 +6,7 @@
 
 use std::collections::HashSet;
 
-use nodus_instance::model::{
+use nodus_client_core::model::{
     Account, Conversation, FeaturedTag, Filter, Notification, ScheduledStatus, SearchResults,
     Status,
 };

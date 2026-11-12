@@ -57,7 +57,7 @@ The three projects are submodules of one superproject:
 
 ```text
 Nodus/            ← superproject: .devcontainer, README, .gitmodules
-├── sdk/      → nodus-sdk       (submodule)
+├── sdk/      → nodus-client-sdk       (submodule)
 ├── recommender/  → nodus-recommender     (submodule)
 └── web/      → nodus-web       (submodule)
 ```
@@ -68,7 +68,7 @@ Nodus/            ← superproject: .devcontainer, README, .gitmodules
 
   ```toml
   nodus-shared = { path = "../sdk/crates/shared", version = "0.1.0" }
-  nodus-sdk    = { path = "../sdk/crates/sdk",    version = "0.1.0" }
+  nodus-client-sdk    = { path = "../sdk/crates/client-sdk",    version = "0.1.0" }
   ```
 
   Paths work because the submodules always sit at fixed relative positions. The

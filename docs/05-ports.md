@@ -12,11 +12,11 @@ where it does. The state machine they hang off is described in
 
 One state machine has three hosts: the browser build, the native test build, and
 the tooling that will drive the same transitions headlessly. Anything compiled in
-for one host is inherited by the other two — a `web_sys` call in `crates/sdk` ends
+for one host is inherited by the other two — a `web_sys` call in `crates/client-sdk` ends
 the native build, and a `reqwest` dependency ends the browser build, because
 `web-sys` only links for `wasm32` and `reqwest` needs a runtime. The ports are
 what is left after everything host-specific has been removed: four traits that
-move data across the boundary, implemented outside `crates/sdk`, with the state
+move data across the boundary, implemented outside `crates/client-sdk`, with the state
 machine holding only the trait, never the implementation.
 
 That is also why the ports are generic parameters rather than `Box<dyn Trait>`
@@ -37,7 +37,7 @@ tests and the shell each want.
 | `Streaming` | — | 1 | the instance's WebSocket, when a host wants one |
 
 Five traits, four parameters. `Streaming` sits beside `InstanceApi` in
-`nodus-instance` instead of in `Sdk`'s generics because streaming is a capability
+`nodus-client-core` instead of in `Sdk`'s generics because streaming is a capability
 and not a dependency: the sync worker polls, the browser streams, tests do neither,
 and a required method would force every implementation — including the M0
 `UnavailableBackend` — to write a `todo!()` for a socket it will never open. The
@@ -153,7 +153,7 @@ layout rendering while only the Feed tab degrades.
 
 ## The discovery transport
 
-`nodus-discovery` is the concrete client, in its own crate because `crates/sdk`
+`nodus-discovery` is the concrete client, in its own crate because `crates/client-sdk`
 must stay free of `reqwest` and `gloo-net` while this transport needs one of them.
 `nodus_discovery::DiscoveryClient` is the native (`reqwest`) implementation and
 `nodus_discovery::BrowserDiscovery` the browser (`gloo-net` + `web-sys`) one; both
@@ -248,7 +248,7 @@ rather than the planned one; the plan is cheap precisely so that this is safe.
 
 **Domain types only.** Every signature above speaks in `nodus_instance`'s model
 (`Status`, `Account`, `Page<T>`, `StreamKind`), `nodus_shared`'s wire DTOs, a plain
-`i64` or `Vec<u8>`, or a type owned by `crates/sdk` itself (`CacheKey`,
+`i64` or `Vec<u8>`, or a type owned by `crates/client-sdk` itself (`CacheKey`,
 `PersistenceError`). No `web_sys`, no `reqwest::Response`, no `gloo_net` request, no
 `sqlx` row. The reason is the crate graph, not taste: the SDK is compiled for
 `wasm32-unknown-unknown` *and* `x86_64`, and a port that named a browser type ends
@@ -307,7 +307,7 @@ untestable in the layer that renders it, in exchange for a fake the UI test woul
 have had to supply anyway. The SDK's share of that problem is already in state:
 `StreamState::Stopped` is what the UI renders when a socket cannot open.
 
-`SyncApi` — `following`, `favourites`, `bookmarks` — is a trait in `nodus-instance`
+`SyncApi` — `following`, `favourites`, `bookmarks` — is a trait in `nodus-client-core`
 but not one of the four, because it describes what the crawler reads on the user's
 behalf while the browser is closed, and a crawler surface has no write method for a
 reason. Browsing needs two of those operations for its saved-posts routes, so the

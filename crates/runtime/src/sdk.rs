@@ -2,14 +2,14 @@
 
 use web_time::Instant;
 
-use nodus_instance::StreamEvent;
-use nodus_instance::actions::{
+use nodus_client_core::StreamEvent;
+use nodus_client_core::actions::{
     AccountActions, Browse, FilterActions, HighlightActions, ScheduleActions, Search as SearchApi,
 };
-use nodus_instance::model::{
+use nodus_client_core::model::{
     Account, Context, List, LocalId, Notification, Page, ScheduledStatus, SearchResults, Status,
 };
-use nodus_instance::{InstanceApi, PageParams, StreamKind};
+use nodus_client_core::{InstanceApi, PageParams, StreamKind};
 use nodus_persist::{CacheKey, Persistence};
 use nodus_protocol::Capabilities;
 use nodus_shared::{AccountFeed, EventBatch, PostFeed};
@@ -19,7 +19,7 @@ use nodus_state::{
     TimelinePage, TimelineRequest,
 };
 
-use nodus_instance::model::Conversation;
+use nodus_client_core::model::Conversation;
 
 use crate::clock::Clock;
 use crate::driver::Driver;
@@ -395,7 +395,7 @@ where
             TimelineRequest::Tag(tag) => self.instance.tag_timeline(tag, params).await,
             TimelineRequest::Account(id) => {
                 self.instance
-                    .account_statuses(&nodus_instance::LocalId(id.to_string()), params)
+                    .account_statuses(&nodus_client_core::LocalId(id.to_string()), params)
                     .await
             }
             other => self.instance.timeline(stream_kind(other), params).await,
@@ -956,7 +956,7 @@ where
                 .ok_or(SdkError::NotSignedIn)?;
             let items = self
                 .instance
-                .featured_tags(&nodus_instance::LocalId(account))
+                .featured_tags(&nodus_client_core::LocalId(account))
                 .await
                 .map_err(SdkError::Instance)?;
             (PageItems::FeaturedTags(items), None)
@@ -1005,7 +1005,7 @@ where
             PageKind::Followers(id) => {
                 let page = self
                     .instance
-                    .followers(&nodus_instance::LocalId(id.clone()), params)
+                    .followers(&nodus_client_core::LocalId(id.clone()), params)
                     .await
                     .map_err(SdkError::Instance)?;
                 (PageItems::Accounts(page.items), page.next_max_id)
@@ -1013,7 +1013,7 @@ where
             PageKind::Following(id) => {
                 let page = self
                     .instance
-                    .following(&nodus_instance::LocalId(id.clone()), params)
+                    .following(&nodus_client_core::LocalId(id.clone()), params)
                     .await
                     .map_err(SdkError::Instance)?;
                 (PageItems::Accounts(page.items), page.next_max_id)

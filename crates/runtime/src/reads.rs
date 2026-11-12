@@ -6,9 +6,9 @@
 //! implement [`Reads`] over the same instance API, so the server's page and the browser's
 //! first page are fetched by the same code rather than by two hand-rolled HTTP calls.
 
-use nodus_instance::InstanceApi;
-use nodus_instance::actions::{Browse, ScheduleActions, Search as SearchApi};
-use nodus_instance::model::{
+use nodus_client_core::InstanceApi;
+use nodus_client_core::actions::{Browse, ScheduleActions, Search as SearchApi};
+use nodus_client_core::model::{
     Account, Context, Conversation, List, LocalId, Notification, Page, PageParams, ScheduledStatus,
     SearchResults, Status, StreamKind,
 };

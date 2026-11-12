@@ -18,12 +18,12 @@ pub mod convert;
 
 use core::fmt;
 
-use nodus_instance::model::{
+use nodus_client_core::model::{
     Account, Context, CredentialAccount, Draft, LocalId, Notification, Page, PageParams,
     Relationship, Status, StreamKind,
 };
-use nodus_instance::rest::{HttpRequest, HttpResponse, Method, Transport};
-use nodus_instance::{Error, Instance, Result};
+use nodus_client_core::rest::{HttpRequest, HttpResponse, Method, Transport};
+use nodus_client_core::{Error, Instance, Result};
 use serde_json::{Value, json};
 use url::Url;
 
@@ -165,7 +165,7 @@ fn items_next(value: &Value) -> Option<String> {
         .map(str::to_owned)
 }
 
-impl<T: Transport> nodus_instance::InstanceApi for MisskeyInstance<T> {
+impl<T: Transport> nodus_client_core::InstanceApi for MisskeyInstance<T> {
     type Error = Error;
 
     async fn verify_credentials(&self) -> Result<Account> {
@@ -371,22 +371,4 @@ fn chrono_now_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |duration| duration.as_millis() as u64)
-}
-
-#[cfg(feature = "native")]
-impl MisskeyInstance<nodus_instance::ReqwestTransport> {
-    /// A Misskey client over `reqwest`.
-    #[must_use]
-    pub fn new(instance: &Instance, token: impl Into<String>) -> Self {
-        Self::with_transport(instance, token, nodus_instance::ReqwestTransport::new())
-    }
-}
-
-#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
-impl MisskeyInstance<nodus_instance::GlooTransport> {
-    /// A Misskey client over `fetch`.
-    #[must_use]
-    pub fn new(instance: &Instance, token: impl Into<String>) -> Self {
-        Self::with_transport(instance, token, nodus_instance::GlooTransport::new())
-    }
 }

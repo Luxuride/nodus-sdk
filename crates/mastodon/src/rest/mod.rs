@@ -15,7 +15,6 @@
 //! `wasm::GlooTransport`) contain no endpoint knowledge at all.
 
 use core::fmt;
-use core::future::Future;
 
 use serde::de::DeserializeOwned;
 use url::Url;
@@ -62,77 +61,7 @@ impl From<String> for Token {
     }
 }
 
-/// The verbs the instance surface uses. `PATCH` is absent because no endpoint we
-/// call needs it; adding one is a one-line change here and in each transport.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Method {
-    /// Read.
-    Get,
-    /// Write.
-    Post,
-    /// Replace.
-    ///
-    /// Only edits and list renames use it, but both are full replacements of the
-    /// resource they address, so `PUT` is the truthful verb rather than a `POST`
-    /// with a `_method` override.
-    Put,
-    /// Partial update: only the fields sent change.
-    Patch,
-    /// Remove.
-    Delete,
-}
-
-impl Method {
-    /// The wire spelling.
-    #[must_use]
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Get => "GET",
-            Self::Post => "POST",
-            Self::Put => "PUT",
-            Self::Patch => "PATCH",
-            Self::Delete => "DELETE",
-        }
-    }
-}
-
-/// A request, in transport-neutral terms.
-#[derive(Debug, Clone)]
-pub struct HttpRequest {
-    /// Verb.
-    pub method: Method,
-    /// Absolute URL, query string included.
-    pub url: Url,
-    /// Headers besides the ones the transport adds itself (auth, user agent).
-    pub headers: Vec<(String, String)>,
-    /// Body bytes; `None` for a body-less request.
-    pub body: Option<Vec<u8>>,
-}
-
-/// A response, already read into memory.
-///
-/// The bodies on this surface are JSON documents of a few hundred kilobytes at
-/// worst, so buffering is simpler than a stream and lets the same decoding code
-/// serve both transports.
-#[derive(Debug, Clone)]
-pub struct HttpResponse {
-    /// HTTP status.
-    pub status: u16,
-    /// `Retry-After`, when the server sent one.
-    pub retry_after_s: Option<u32>,
-    /// Body bytes.
-    pub body: Vec<u8>,
-}
-
-/// The seam between the endpoint implementation and the platform.
-///
-/// Implementors do three things: attach the auth header, send, and read the
-/// body. They must not interpret statuses — that lives here so a 401 means the
-/// same thing in the browser and in the worker.
-pub trait Transport: Clone + 'static {
-    /// Sends one request.
-    fn send(&self, request: HttpRequest) -> impl Future<Output = Result<HttpResponse>>;
-}
+pub use nodus_client_core::rest::{HttpRequest, HttpResponse, Method, Transport};
 
 /// One instance, one token, one transport.
 ///

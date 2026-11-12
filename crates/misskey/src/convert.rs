@@ -1,6 +1,6 @@
 //! The wire mapping. Misskey's shapes stay in this file.
 
-use nodus_instance::model::{
+use nodus_client_core::model::{
     Account, CredentialSource, CustomEmoji, LocalId, MediaAttachment, MediaKind, Mention,
     Notification, NotificationKind, Poll, PollOption, Relationship, Status, Tag, Visibility,
 };

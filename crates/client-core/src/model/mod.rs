@@ -26,7 +26,7 @@ pub use instance::{
     Usage, UsageUsers,
 };
 pub use interaction::{
-    Conversation, HistoryEntry, List, MediaAttachment, MediaKind, Mention, Poll, PollOption,
+    Conversation, HistoryEntry, List, Media, MediaAttachment, MediaKind, Mention, Poll, PollOption,
     ProfileUpdate, SearchResults, Tag, TagHistory,
 };
 pub use schedule::{ScheduledParams, ScheduledStatus};
@@ -37,7 +37,7 @@ use serde::{Deserialize, Serialize};
 
 /// An account, as returned by `/api/v1/accounts/:id`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Account {
+pub struct Actor {
     /// Instance-local id, as a string.
     pub id: String,
     /// `user@host`, or just `user` for local accounts.
@@ -83,6 +83,9 @@ pub struct Account {
     pub noindex: Option<bool>,
 }
 
+/// Mastodon's name for an [`Actor`]; kept for existing clients.
+pub use Actor as Account;
+
 /// A thread around one status: what it replies to, and what replies to it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Context {
@@ -106,7 +109,7 @@ pub enum StreamKind {
 
 /// A custom emoji entry.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CustomEmoji {
+pub struct Emoji {
     /// `:shortcode:` without colons.
     pub shortcode: String,
     /// Image URL.
@@ -115,6 +118,9 @@ pub struct CustomEmoji {
     #[serde(default)]
     pub static_url: Option<String>,
 }
+
+/// Mastodon's name for an [`Emoji`].
+pub use Emoji as CustomEmoji;
 
 /// Reply/visibility level of a status.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -155,7 +161,7 @@ impl Visibility {
     clippy::struct_excessive_bools,
     reason = "the wire has independent flags and a DTO must mirror it"
 )]
-pub struct Status {
+pub struct Post {
     /// Instance-local id.
     pub id: String,
     /// When it was posted, RFC 3339.
@@ -222,6 +228,9 @@ pub struct Status {
     #[serde(default)]
     pub pinned: Option<bool>,
 }
+
+/// Mastodon's name for a [`Post`].
+pub use Post as Status;
 
 /// Kind of notification.
 ///

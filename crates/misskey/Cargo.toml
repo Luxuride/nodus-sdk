@@ -1,6 +1,6 @@
 [package]
-name = "nodus-instance-misskey"
-description = "Misskey's API, mapped onto the Nodus instance surface."
+name = "nodus-misskey"
+description = "Misskey API compatibility over nodus-client-core"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,11 +9,11 @@ publish.workspace = true
 repository.workspace = true
 
 [features]
-native = ["nodus-instance/native"]
-wasm = ["nodus-instance/wasm"]
+native = []
+wasm = []
 
 [dependencies]
-nodus-instance = { workspace = true }
+nodus-client-core = { workspace = true }
 serde.workspace = true
 serde_json.workspace = true
 url.workspace = true

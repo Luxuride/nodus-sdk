@@ -1,7 +1,8 @@
-# nodus-sdk
+# nodus-client-sdk
 
-The Mastodon client SDK: everything the web client knows, and nothing about how
-it looks.
+The client SDK for Nodus and the fediverse: one state machine, one shared model,
+and protocol adapters for ActivityPub, Mastodon and Misskey. It knows nothing about
+how a client looks.
 
 The client is deliberately split in two:
 
@@ -20,13 +21,17 @@ for the browser, once for the sync worker) and drift.
 | Crate | Purpose |
 | --- | --- |
 | `nodus-shared` | Wire contract with our recommendation API (`AccountFeed`, `EventBatch`, `Meta`, errors). No I/O, no async, compiles for `wasm32` and `x86_64`. |
-| `nodus-instance` | Mastodon domain model (`Status`, `Account`, `Notification`, `Page`, …) and the instance trait [`InstanceApi`] that transports implement. |
+| `nodus-client-core` | Implementation-agnostic model (`Actor`, `Post`, `Notification`, `Page`, …), the `InstanceApi`/`SyncApi` traits, and the command vocabulary. Mastodon's `Account`/`Status` names remain aliases. |
+| `nodus-activitypub-sdk` | Standalone ActivityPub objects and reader: actors, notes, collections, WebFinger. Converts into the shared model. |
+| `nodus-federation` | Federation building blocks: activities, HTTP signatures, delivery and inbox ports. |
+| `nodus-mastodon` | Mastodon REST compatibility (`/api/v1`, `/api/v2`) plus native and browser transports. |
+| `nodus-misskey` | Misskey compatibility mapped onto the same core traits. |
 | `nodus-protocol` | The Nodus extensions on top of Mastodon: capability negotiation, event subscriptions with semantic kinds, batch requests. No I/O, no state. |
-| `nodus-sdk` | The state machine: [`Sdk<I, D, P, C>`], [`AppState`], [`Command`], and the ports it runs on. |
+| `nodus-client-sdk` | The state machine: [`Sdk<I, D, P, C>`], [`AppState`], [`Command`], and the ports it runs on. |
 
 ## Two surfaces, one client
 
-`nodus-instance` is the **compatibility floor**: it speaks Mastodon 4.3 and nothing
+`nodus-mastodon` is the **compatibility floor**: it speaks Mastodon 4.3 and nothing
 else, so the client works against any instance in the fediverse. `nodus-protocol` is the
 **ceiling**: what our own server adds (typed events for likes and edits, batch requests,
 recommendations).
@@ -64,10 +69,10 @@ weaken the Feed tab). Keeping them separate is why
 `SdkError::Instance` and `SdkError::Discovery` are distinct and why
 `SdkError::is_discovery_only()` can exist.
 
-[`InstanceApi`]: crates/instance/src/api.rs
-[`Sdk<I, D, P, C>`]: crates/sdk/src/sdk.rs
-[`AppState`]: crates/sdk/src/state.rs
-[`Command`]: crates/sdk/src/command.rs
+[`InstanceApi`]: crates/client-core/src/api.rs
+[`Sdk<I, D, P, C>`]: crates/client-sdk/src/sdk.rs
+[`AppState`]: crates/client-sdk/src/state.rs
+[`Command`]: crates/client-sdk/src/command.rs
 
 ## State model
 
@@ -103,8 +108,9 @@ checkout always sits at `../sdk` relative to `recommender` and `web`. Consumers 
 plain path dependencies:
 
 ```toml
-nodus-shared = { path = "../sdk/crates/shared", version = "0.1.0" }
-nodus-sdk    = { path = "../sdk/crates/sdk",    version = "0.1.0" }
+nodus-shared      = { path = "../sdk/crates/shared",      version = "0.1.0" }
+nodus-client-sdk  = { path = "../sdk/crates/client-sdk",  version = "0.1.0" }
+nodus-mastodon    = { path = "../sdk/crates/mastodon",    version = "0.1.0" }
 ```
 
 Why paths and not `git = "https://…"`:
@@ -148,5 +154,5 @@ the ports.
 Nodus is not affiliated with, endorsed by, or sponsored by Mastodon GmbH.
 "Mastodon" is a trademark of Mastodon GmbH and is used in this repository only
 to describe compatibility; it is deliberately absent from the crate name
-(`nodus-instance`, not `mastodon-*`). See
+(`nodus-client-core`, not `mastodon-*`). See
 [`recommender/docs/11-trademark.md`](../recommender/docs/11-trademark.md).

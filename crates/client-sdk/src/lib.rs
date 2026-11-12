@@ -1,31 +1,26 @@
-//! Client-side Mastodon state store: the source of truth the web client renders.
+//! The Nodus client SDK.
 //!
-//! This crate is the overall SDK library. It owns no protocol logic: the client half is
-//! the runtime/state machine below, and the federation half is opt-in through the
-//! `activitypub` and `federation` features. `use nodus_sdk::{…}` stays the entry point
-//! while the implementation is split across `nodus-state` (the state tree and its command vocabulary),
-//! `nodus-runtime` (the `Sdk<I, D, P, C>` state machine), `nodus-persist` (the
-//! cache port), `nodus-instance` (the instance surface as traits) and
-//! `nodus-discovery` (our recommendation API transport).
+//! One state machine and command vocabulary for every client. The crate owns no
+//! protocol logic: `nodus-client-core` defines the shared model and operation
+//! traits, `nodus-runtime` runs the state machine, `nodus-state` is the observed
+//! tree, and `nodus-discovery` is the recommendation transport. `ActivityPub`,
+//! federation, Mastodon and Misskey are optional layers around that core.
 //!
 //! ```text
-//! web ──► nodus-sdk (facade) ──► runtime ──► state ──► shared
-//!                                  │           ▲
-//!                                  └► persist ─┘
-//!                                  └► instance (model + traits + transports)
-//!         sdk ──► discovery ──► state
+//! web/mobile/desktop ──► nodus-client-sdk ──► runtime ──► state
+//!                                                │          ▲
+//!                                                └► persist ┘
+//!                           client-core (model + traits)
+//!                              ▲                 ▲
+//!                     nodus-activitypub   nodus-mastodon / nodus-misskey
 //! ```
 //!
-//! The facade depends on `discovery` for its re-exports and `discovery` depends on
-//! `state`; nothing depends back on the facade, so there is no cycle. The
-//! transport impls (`nodus-instance` (the `native`/`wasm` transports)) are *not* re-exported here: a consumer
-//! chooses its transport explicitly (`native` or `wasm`) instead of getting
-//! whichever one the facade happened to pick.
-//!
-//! Prefer importing from [`prelude`] for the everyday set; import from the
-//! submodules when you need the finer pieces.
+//! A consumer picks its transport explicitly: `nodus-mastodon` for a Mastodon
+//! API, `nodus-misskey` for Misskey, or a custom implementation of the core
+//! traits. The facade never selects one for you.
 
-pub use nodus_instance::InstanceApi;
+pub use nodus_client_core as core;
+pub use nodus_client_core::InstanceApi;
 pub use nodus_persist::{CacheKey, MemoryPersistence, Persistence, PersistenceError};
 pub use nodus_runtime::{
     Answer, Budget, Clock, Drive, Driver, FixedClock, Headless, Plan, Reads, Scheduler, Sdk,
@@ -37,13 +32,17 @@ pub use nodus_state::{
     TimelinePage, TimelineRequest,
 };
 
-/// ActivityPub objects and the public reader.
+/// `ActivityPub` objects and the public reader.
 #[cfg(feature = "activitypub")]
 pub use nodus_activitypub_sdk as activitypub;
 
-/// Misskey's API, mapped onto the same instance surface as Mastodon.
+/// Mastodon's API, mapped onto the shared client model.
+#[cfg(feature = "mastodon")]
+pub use nodus_mastodon as mastodon;
+
+/// Misskey's API, mapped onto the shared client model.
 #[cfg(feature = "misskey")]
-pub use nodus_instance_misskey as misskey;
+pub use nodus_misskey as misskey;
 
 /// Federation activities, signatures, delivery and inbox ports.
 #[cfg(feature = "federation")]
@@ -107,13 +106,13 @@ pub mod state {
 
 /// The instance surface as traits, plus the model it speaks.
 pub mod instance_api {
-    pub use nodus_instance::*;
+    pub use nodus_client_core::*;
 }
 
 /// The everyday set: state, commands, the SDK and its ports.
 ///
 /// ```
-/// use nodus_sdk::prelude::*;
+/// use nodus_client_sdk::prelude::*;
 ///
 /// // A discovery outage only degrades the Feed tab; timelines keep rendering.
 /// fn only_feed_is_degraded(error: SdkError<(), ()>) -> bool {

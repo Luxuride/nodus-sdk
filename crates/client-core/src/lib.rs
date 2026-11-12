@@ -1,50 +1,35 @@
-//! Mastodon compatibility, in one crate.
+//! The protocol-neutral Nodus client core.
 //!
-//! Everything that would break if Mastodon changed lives here:
+//! This crate owns what a client needs regardless of who serves it:
 //!
-//! * [`model`] — the protocol's data shapes ([`Status`], [`Account`], `Page`, …);
-//! * [`api::InstanceApi`] — what a signed-in person can do, as a trait;
-//! * [`sync_api::SyncApi`] — the read-only crawl surface (`following`,
-//!   `favourites`, `bookmarks`), deliberately without any write method;
-//! * [`rest`] — one endpoint implementation over a [`rest::Transport`], plus the
-//!   two transports (`native` → `reqwest`, `wasm` → `gloo-net`).
+//! * [`model`] — the shared Actor/Post shapes and AP-aligned vocabulary;
+//! * [`api::InstanceApi`] — the read surface the client state machine drives;
+//! * [`sync_api::SyncApi`] — the read-only crawl surface;
+//! * [`actions`] — the operations a signed-in person can perform.
 //!
-//! The traits are what a consumer codes against: `nodus-state` is generic over
-//! the surface and never compiles an HTTP stack. The transports are the only
-//! place a request is spelled, so an endpoint, an error mapping or a pagination
-//! rule cannot drift between the sync worker and the browser.
-//!
-//! The non-standard extensions (`nodus-protocol`) are **not** here on purpose:
-//! this crate is the compatibility floor, and a client that only understands
-//! this crate works against any Mastodon instance.
+//! No HTTP stack, vendor endpoint, or Mastodon-only field belongs here. Mastodon
+//! and Misskey implement these traits in their own compatibility crates, and
+//! `ActivityPub` objects convert into this model through `nodus-activitypub-sdk`.
 
 pub mod actions;
+#[cfg(feature = "activitypub")]
+pub mod activity;
 pub mod api;
 pub mod model;
 pub mod rest;
 pub mod sync_api;
 
-#[cfg(feature = "native")]
-pub mod native;
-#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
-pub mod wasm;
-
 pub use api::{InstanceApi, Streaming};
 pub use model::*;
 pub use sync_api::SyncApi;
 
-#[cfg(feature = "native")]
-pub use native::{HttpInstance, ReqwestTransport};
-#[cfg(all(target_arch = "wasm32", feature = "wasm"))]
-pub use wasm::{BrowserInstance, GlooTransport};
-
 use url::Url;
 
-/// Why a Mastodon call failed.
+/// Why a client operation failed.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// The instance answered with a non-success status.
-    #[error("mastodon returned {status}: {message}")]
+    #[error("instance returned {status}: {message}")]
     Status {
         /// HTTP status code.
         status: u16,

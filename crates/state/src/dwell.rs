@@ -23,7 +23,7 @@ use nodus_shared::{EventBatch, EventKind, InteractionEvent};
 
 /// The longest dwell worth reporting, in milliseconds.
 ///
-/// Matches `nodus_core::evidence::DWELL_CAP_MS` — a card left open overnight is not
+/// Matches `nodus_client_core::evidence::DWELL_CAP_MS` — a card left open overnight is not
 /// two hours of attention, and the server clamps to this value anyway.
 pub const MAX_DWELL_MS: u32 = 120_000;
 

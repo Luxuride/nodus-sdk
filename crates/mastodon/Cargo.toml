@@ -1,6 +1,6 @@
 [package]
-name = "nodus-instance"
-description = "Mastodon compatibility in one crate: the protocol model, the instance surface as traits, and the REST transports"
+name = "nodus-mastodon"
+description = "Mastodon API compatibility: REST endpoints and native/browser transports over nodus-client-core"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,9 +9,9 @@ publish.workspace = true
 repository.workspace = true
 
 [dependencies]
+nodus-client-core = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-thiserror = { workspace = true }
 url = { workspace = true }
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls", "webpki-roots"], optional = true }
 gloo-net = { version = "0.6", default-features = false, features = ["http"], optional = true }
@@ -24,9 +24,7 @@ web-sys = { version = "0.3", optional = true, features = [
 ] }
 
 [features]
-# The `reqwest` transport, for native builds (the calculator, the sync worker).
 native = ["dep:reqwest"]
-# The browser transport; only built for `wasm32`.
 wasm = ["dep:gloo-net", "dep:wasm-bindgen", "dep:js-sys", "dep:web-sys"]
 
 [lints]

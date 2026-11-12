@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use nodus_instance::model::{Account, Status};
+use nodus_client_core::model::{Account, Status};
 use nodus_protocol::Capabilities;
 use nodus_shared::{AccountFeed, AccountItem, PostFeed, PostItem};
 
