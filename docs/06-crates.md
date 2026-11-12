@@ -11,12 +11,10 @@ nodus-client-sdk  ──►  nodus-runtime  ──►  nodus-state  ──►  n
         │                  │
         │                  └──► nodus-persist
         │
-        ├──► nodus-client-core   (model, traits, commands)
-        │          ▲       ▲
-        │          │       │
-        │   nodus-mastodon  nodus-misskey
-        │
-        └──► nodus-mastodon / nodus-misskey
+        └──► nodus-client-core   (model, traits, commands)
+                   ▲       ▲
+                   │       │
+            nodus-mastodon  nodus-misskey
 ```
 
 | Crate | Depends on | Responsibility |
