@@ -69,7 +69,10 @@ impl Note {
             url,
             content: string(object.get("content")).unwrap_or_default(),
             published: string(object.get("published")).unwrap_or_default(),
-            sensitive: object.get("sensitive").and_then(Value::as_bool).unwrap_or(false),
+            sensitive: object
+                .get("sensitive")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
             summary: string(object.get("summary")).unwrap_or_default(),
             attachments: attachments(object.get("attachment")),
             emojis: emojis(object.get("tag")),
@@ -99,8 +102,14 @@ fn attachments(value: Option<&Value>) -> Vec<Attachment> {
                 url: url.clone(),
                 preview_url: item.get("icon").and_then(|icon| link(Some(icon))),
                 description: string(item.get("name")),
-                width: item.get("width").and_then(Value::as_u64).and_then(|n| u32::try_from(n).ok()),
-                height: item.get("height").and_then(Value::as_u64).and_then(|n| u32::try_from(n).ok()),
+                width: item
+                    .get("width")
+                    .and_then(Value::as_u64)
+                    .and_then(|n| u32::try_from(n).ok()),
+                height: item
+                    .get("height")
+                    .and_then(Value::as_u64)
+                    .and_then(|n| u32::try_from(n).ok()),
             })
         })
         .collect()

@@ -125,7 +125,12 @@ pub(crate) fn emojis(value: Option<&Value>) -> Vec<Emoji> {
             let url = item
                 .get("icon")
                 .and_then(|icon| link(Some(icon)))
-                .or_else(|| item.get("icon").and_then(|icon| icon.get("url")).and_then(Value::as_str).map(str::to_owned))?;
+                .or_else(|| {
+                    item.get("icon")
+                        .and_then(|icon| icon.get("url"))
+                        .and_then(Value::as_str)
+                        .map(str::to_owned)
+                })?;
             Some(Emoji { shortcode, url })
         })
         .collect()

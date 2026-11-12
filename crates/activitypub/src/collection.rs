@@ -22,7 +22,8 @@ impl Collection {
     /// # Errors
     /// [`Error::Object`] when there is no id.
     pub fn from_json(value: &Value) -> Result<Self, Error> {
-        let id = string(value.get("id")).ok_or_else(|| Error::Object("collection has no id".into()))?;
+        let id =
+            string(value.get("id")).ok_or_else(|| Error::Object("collection has no id".into()))?;
         Ok(Self {
             id,
             total_items: total_items(Some(value)),

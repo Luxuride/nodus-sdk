@@ -46,9 +46,7 @@ impl HttpSignature {
         let mut headers = None;
         let mut signature = None;
         for part in header.split(',') {
-            let (name, value) = part
-                .split_once('=')
-                .ok_or(SignatureError::Malformed)?;
+            let (name, value) = part.split_once('=').ok_or(SignatureError::Malformed)?;
             let value = value.trim().trim_matches('"').to_owned();
             match name.trim() {
                 "keyId" => key_id = Some(value),
@@ -104,7 +102,8 @@ impl fmt::Display for HttpSignature {
 /// A signer supplied by the host.
 pub trait Signer: Send + Sync {
     /// Sign a canonical string.
-    fn sign(&self, key_id: &str, algorithm: &str, message: &[u8]) -> Result<String, SignatureError>;
+    fn sign(&self, key_id: &str, algorithm: &str, message: &[u8])
+    -> Result<String, SignatureError>;
 }
 
 /// A verifier supplied by the host.
@@ -140,10 +139,9 @@ mod tests {
 
     #[test]
     fn canonical_signing_string_keeps_header_order() {
-        let signature = HttpSignature::parse(
-            r#"keyId="k",headers="(request-target) host date",signature="s""#,
-        )
-        .expect("signature");
+        let signature =
+            HttpSignature::parse(r#"keyId="k",headers="(request-target) host date",signature="s""#)
+                .expect("signature");
         let message = signature
             .signing_string(|name| {
                 Some(match name {
