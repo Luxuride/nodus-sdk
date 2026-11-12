@@ -1,0 +1,22 @@
+[package]
+name = "nodus-instance-misskey"
+description = "Misskey's API, mapped onto the Nodus instance surface."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+repository.workspace = true
+
+[features]
+native = ["nodus-instance/native"]
+wasm = ["nodus-instance/wasm"]
+
+[dependencies]
+nodus-instance = { workspace = true }
+serde.workspace = true
+serde_json.workspace = true
+url.workspace = true
+
+[lints]
+workspace = true

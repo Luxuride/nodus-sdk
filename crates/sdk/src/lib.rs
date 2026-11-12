@@ -41,6 +41,10 @@ pub use nodus_state::{
 #[cfg(feature = "activitypub")]
 pub use nodus_activitypub_sdk as activitypub;
 
+/// Misskey's API, mapped onto the same instance surface as Mastodon.
+#[cfg(feature = "misskey")]
+pub use nodus_instance_misskey as misskey;
+
 /// Federation activities, signatures, delivery and inbox ports.
 #[cfg(feature = "federation")]
 pub use nodus_federation as federation;

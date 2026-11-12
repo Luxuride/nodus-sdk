@@ -13,6 +13,7 @@ repository.workspace = true
 [features]
 default = []
 activitypub = ["dep:nodus-activitypub-sdk"]
+misskey = ["dep:nodus-instance-misskey"]
 federation = ["activitypub", "dep:nodus-federation"]
 
 [dependencies]
@@ -22,6 +23,7 @@ nodus-persist = { workspace = true }
 nodus-runtime = { workspace = true }
 nodus-state = { workspace = true }
 nodus-activitypub-sdk = { workspace = true, optional = true }
+nodus-instance-misskey = { workspace = true, optional = true }
 nodus-federation = { workspace = true, optional = true }
 
 [lints]

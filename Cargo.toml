@@ -3,6 +3,7 @@ resolver = "3"
 members = [
     "crates/shared",
     "crates/instance",
+    "crates/instance-misskey",
     "crates/nodus",
     "crates/discovery",
     "crates/persist",
@@ -24,6 +25,7 @@ repository = "https://github.com/nodus-social/nodus-sdk"
 [workspace.dependencies]
 nodus-shared = { path = "crates/shared", version = "0.1.0" }
 nodus-instance = { path = "crates/instance", version = "0.1.0" }
+nodus-instance-misskey = { path = "crates/instance-misskey", version = "0.1.0" }
 nodus-protocol = { path = "crates/nodus", version = "0.1.0" }
 nodus-discovery = { path = "crates/discovery", version = "0.1.0" }
 nodus-persist = { path = "crates/persist", version = "0.1.0" }
