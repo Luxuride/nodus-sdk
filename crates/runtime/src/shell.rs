@@ -89,6 +89,22 @@ impl InstanceApi for UnavailableBackend {
         unavailable()
     }
 
+    fn account_followers(
+        &self,
+        _id: &LocalId,
+        _params: PageParams,
+    ) -> impl Future<Output = Result<Page<Account>, Self::Error>> {
+        unavailable()
+    }
+
+    fn account_following(
+        &self,
+        _id: &LocalId,
+        _params: PageParams,
+    ) -> impl Future<Output = Result<Page<Account>, Self::Error>> {
+        unavailable()
+    }
+
     fn account_statuses(
         &self,
         _id: &LocalId,

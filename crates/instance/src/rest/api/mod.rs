@@ -74,6 +74,16 @@ impl<T: Transport> InstanceApi for RestInstance<T> {
         self.fetch(self.get(url)).await
     }
 
+    async fn account_followers(&self, id: &LocalId, params: PageParams) -> Result<Page<Account>> {
+        let url = self.page_url(&format!("/api/v1/accounts/{}/followers", id.0), &params)?;
+        self.fetch_page(self.get(url), &params).await
+    }
+
+    async fn account_following(&self, id: &LocalId, params: PageParams) -> Result<Page<Account>> {
+        let url = self.page_url(&format!("/api/v1/accounts/{}/following", id.0), &params)?;
+        self.fetch_page(self.get(url), &params).await
+    }
+
     async fn account_statuses(&self, id: &LocalId, params: PageParams) -> Result<Page<Status>> {
         let url = self.page_url(&format!("/api/v1/accounts/{}/statuses", id.0), &params)?;
         self.fetch_page(self.get(url), &params).await

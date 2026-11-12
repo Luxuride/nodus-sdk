@@ -75,6 +75,20 @@ pub trait InstanceApi {
     /// turns `user@host` into the account id that host uses in its own API.
     fn account_lookup(&self, acct: &str) -> impl Future<Output = Result<Account, Self::Error>>;
 
+    /// An account's followers, newest first.
+    fn account_followers(
+        &self,
+        id: &LocalId,
+        params: PageParams,
+    ) -> impl Future<Output = Result<Page<Account>, Self::Error>>;
+
+    /// The accounts an account follows, newest first.
+    fn account_following(
+        &self,
+        id: &LocalId,
+        params: PageParams,
+    ) -> impl Future<Output = Result<Page<Account>, Self::Error>>;
+
     /// An account's statuses.
     fn account_statuses(
         &self,
