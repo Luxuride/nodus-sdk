@@ -22,8 +22,6 @@ for the browser, once for the sync worker) and drift.
 | --- | --- |
 | `nodus-shared` | Wire contract with our recommendation API (`AccountFeed`, `EventBatch`, `Meta`, errors). No I/O, no async, compiles for `wasm32` and `x86_64`. |
 | `nodus-client-core` | Implementation-agnostic model (`Actor`, `Post`, `Notification`, `Page`, …), the `InstanceApi`/`SyncApi` traits, and the command vocabulary. Mastodon's `Account`/`Status` names remain aliases. |
-| `nodus-activitypub-sdk` | Standalone ActivityPub objects and reader: actors, notes, collections, WebFinger. Converts into the shared model. |
-| `nodus-federation` | Federation building blocks: activities, HTTP signatures, delivery and inbox ports. |
 | `nodus-mastodon` | Mastodon REST compatibility (`/api/v1`, `/api/v2`) plus native and browser transports. |
 | `nodus-misskey` | Misskey compatibility mapped onto the same core traits. |
 | `nodus-protocol` | The Nodus extensions on top of Mastodon: capability negotiation, event subscriptions with semantic kinds, batch requests. No I/O, no state. |
