@@ -209,6 +209,12 @@ pub struct Post {
     /// Content warning, plain text.
     #[serde(default)]
     pub spoiler_text: String,
+    /// Source language of the body, when the instance declares one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_format: Option<String>,
+    /// The unrendered body, when the instance sends a non-HTML format.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_source: Option<String>,
     /// Attached media, in display order.
     #[serde(default)]
     pub media_attachments: Vec<MediaAttachment>,

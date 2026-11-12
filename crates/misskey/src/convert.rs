@@ -87,6 +87,8 @@ pub fn status(value: Value) -> Option<Status> {
         id: string(&value, "id")?,
         created_at: string(&value, "createdAt").unwrap_or_default(),
         content: text_html(text, &emojis),
+        content_format: Some("mfm".to_owned()),
+        content_source: Some(text.to_owned()),
         visibility: visibility_in(value.get("visibility").and_then(Value::as_str)),
         account,
         favourites_count: favourites,
