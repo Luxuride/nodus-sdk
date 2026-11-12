@@ -15,6 +15,7 @@ default = []
 activitypub = ["dep:nodus-activitypub-sdk"]
 misskey = ["dep:nodus-instance-misskey"]
 federation = ["activitypub", "dep:nodus-federation"]
+federation-crypto = ["federation", "nodus-federation/crypto"]
 
 [dependencies]
 nodus-discovery = { workspace = true }

@@ -20,6 +20,9 @@ pub enum SignatureError {
     /// The signing string has no headers.
     #[error("signature has no headers")]
     Empty,
+    /// Key material or a cryptographic operation failed.
+    #[error("signature crypto failed: {0}")]
+    Crypto(String),
 }
 
 /// A parsed `Signature` / `Authorization: Signature` header.
@@ -116,6 +119,108 @@ pub trait Verifier: Send + Sync {
         message: &[u8],
         signature: &str,
     ) -> Result<(), SignatureError>;
+}
+
+/// RSA-SHA256 signing and verification.
+///
+/// Key custody stays with the host: this type only wraps a parsed key, it does
+/// not fetch or persist one.
+#[cfg(feature = "crypto")]
+pub mod crypto {
+    use base64::Engine as _;
+    use rsa::pkcs1v15::{Signature, SigningKey, VerifyingKey};
+    use rsa::pkcs8::{DecodePrivateKey, DecodePublicKey};
+    use rsa::signature::{SignatureEncoding, Signer as _, Verifier as _};
+    use sha2::{Digest, Sha256};
+
+    use super::{SignatureError, Signer, Verifier};
+
+    /// An RSA private key that signs `rsa-sha256`.
+    #[derive(Debug)]
+    pub struct RsaSigner {
+        key: SigningKey<Sha256>,
+    }
+
+    impl RsaSigner {
+        /// Parse a PKCS#8 PEM private key.
+        ///
+        /// # Errors
+        /// [`SignatureError::Crypto`] when the PEM or key is invalid.
+        pub fn from_pkcs8_pem(pem: &str) -> Result<Self, SignatureError> {
+            let key = rsa::RsaPrivateKey::from_pkcs8_pem(pem)
+                .map_err(|error| SignatureError::Crypto(error.to_string()))?;
+            Ok(Self {
+                key: SigningKey::new(key),
+            })
+        }
+    }
+
+    impl Signer for RsaSigner {
+        fn sign(
+            &self,
+            _key_id: &str,
+            algorithm: &str,
+            message: &[u8],
+        ) -> Result<String, SignatureError> {
+            if algorithm != "rsa-sha256" {
+                return Err(SignatureError::Algorithm(algorithm.to_owned()));
+            }
+            let signature = self.key.sign(message);
+            Ok(base64::engine::general_purpose::STANDARD.encode(signature.to_bytes()))
+        }
+    }
+
+    /// An RSA public key that verifies `rsa-sha256`.
+    #[derive(Debug)]
+    pub struct RsaVerifier {
+        key: VerifyingKey<Sha256>,
+    }
+
+    impl RsaVerifier {
+        /// Parse a PKCS#8 PEM public key.
+        ///
+        /// # Errors
+        /// [`SignatureError::Crypto`] when the PEM or key is invalid.
+        pub fn from_public_key_pem(pem: &str) -> Result<Self, SignatureError> {
+            let key = rsa::RsaPublicKey::from_public_key_pem(pem)
+                .map_err(|error| SignatureError::Crypto(error.to_string()))?;
+            Ok(Self {
+                key: VerifyingKey::new(key),
+            })
+        }
+    }
+
+    impl Verifier for RsaVerifier {
+        fn verify(
+            &self,
+            _key_id: &str,
+            algorithm: &str,
+            message: &[u8],
+            signature: &str,
+        ) -> Result<(), SignatureError> {
+            if algorithm != "rsa-sha256" {
+                return Err(SignatureError::Algorithm(algorithm.to_owned()));
+            }
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(signature)
+                .map_err(|error| SignatureError::Crypto(error.to_string()))?;
+            let signature = Signature::try_from(bytes.as_slice())
+                .map_err(|error| SignatureError::Crypto(error.to_string()))?;
+            self.key
+                .verify(message, &signature)
+                .map_err(|error| SignatureError::Crypto(error.to_string()))
+        }
+    }
+
+    /// The `Digest` header value for a request body.
+    #[must_use]
+    pub fn body_digest(body: &[u8]) -> String {
+        let digest = Sha256::digest(body);
+        format!(
+            "SHA-256={}",
+            base64::engine::general_purpose::STANDARD.encode(digest)
+        )
+    }
 }
 
 #[cfg(test)]
