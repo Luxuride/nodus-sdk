@@ -9,8 +9,8 @@
 
 use crate::actions::AdminActions;
 use crate::model::{
-    AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity, ModerationAction, Report,
-    ReportState,
+    AdminAccount, AdminMeasure, Announcement, AnnouncementDraft, AuditEntry, DomainAllow,
+    DomainBlock, DomainSeverity, ModerationAction, Report, ReportState,
 };
 use crate::rest::{RestInstance, Transport};
 use crate::{Error, Result};
@@ -93,6 +93,38 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         self.fetch(request).await
     }
 
+    async fn audit(&self, limit: u16) -> Result<Vec<AuditEntry>> {
+        let url = self.url(&format!("/api/v1/admin/audit?limit={limit}"))?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn admin_announcements(&self) -> Result<Vec<Announcement>> {
+        let url = self.url("/api/v1/admin/announcements")?;
+        self.fetch(self.get(url)).await
+    }
+
+    async fn create_announcement(&self, draft: AnnouncementDraft) -> Result<Announcement> {
+        let url = self.url("/api/v1/admin/announcements")?;
+        self.fetch(self.post_form(url, &announcement_form(&draft)))
+            .await
+    }
+
+    async fn update_announcement(
+        &self,
+        id: &str,
+        draft: AnnouncementDraft,
+    ) -> Result<Announcement> {
+        let url = self.url(&format!("/api/v1/admin/announcements/{id}"))?;
+        self.fetch(self.put_form(url, &announcement_form(&draft)))
+            .await
+    }
+
+    async fn delete_announcement(&self, id: &str) -> Result<()> {
+        let url = self.url(&format!("/api/v1/admin/announcements/{id}"))?;
+        let _: serde_json::Value = self.fetch(self.delete(url)).await?;
+        Ok(())
+    }
+
     async fn domain_allows(&self, limit: u16) -> Result<Vec<DomainAllow>> {
         let url = self.url(&format!("/api/v1/admin/domain_allows?limit={limit}"))?;
         self.fetch(self.get(url)).await
@@ -108,6 +140,22 @@ impl<T: Transport> AdminActions for RestInstance<T> {
         let url = self.url(&format!("/api/v1/admin/domain_allows/{id}"))?;
         self.fetch(self.delete(url)).await
     }
+}
+
+/// Encode the editable fields; absent dates are omitted rather than sent empty.
+fn announcement_form(draft: &AnnouncementDraft) -> Vec<(&'static str, String)> {
+    let mut form = vec![
+        ("content", draft.content.clone()),
+        ("published", draft.published.to_string()),
+        ("all_day", draft.all_day.to_string()),
+    ];
+    if let Some(start) = &draft.starts_at {
+        form.push(("starts_at", start.clone()));
+    }
+    if let Some(end) = &draft.ends_at {
+        form.push(("ends_at", end.clone()));
+    }
+    form
 }
 
 #[cfg(test)]

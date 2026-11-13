@@ -21,10 +21,11 @@ use core::fmt::Debug;
 use core::future::Future;
 
 use crate::model::{
-    Account, AdminAccount, AdminMeasure, Announcement, Conversation, CustomEmoji, DomainAllow,
-    DomainBlock, DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft, HistoryEntry,
-    InstanceInfo, Language, List, LocalId, MediaAttachment, ModerationAction, Page, PageParams,
-    Preferences, Relationship, Report, ReportState, Rule, ScheduledStatus, SearchResults, Status,
+    Account, AdminAccount, AdminMeasure, Announcement, AnnouncementDraft, AuditEntry, Conversation,
+    CustomEmoji, DomainAllow, DomainBlock, DomainSeverity, Draft, FeaturedTag, Filter, FilterDraft,
+    HistoryEntry, InstanceInfo, Language, List, LocalId, MediaAttachment, ModerationAction, Page,
+    PageParams, Preferences, Relationship, Report, ReportState, Rule, ScheduledStatus,
+    SearchResults, Status,
 };
 
 /// Things done to a status.
@@ -395,6 +396,28 @@ pub trait AdminActions {
     // Relays are deliberately absent: Mastodon documents no relay endpoint
     // (`/methods/admin/relays/` is itself a 404) and `/api/v1/admin/relays` answers the
     // instance's HTML 404 page. Following a relay is a web-UI action only.
+    /// The most recent administrative actions.
+    fn audit(&self, limit: u16) -> impl Future<Output = Result<Vec<AuditEntry>, Self::Error>>;
+
+    /// Every announcement, published or not, for staff.
+    fn admin_announcements(&self) -> impl Future<Output = Result<Vec<Announcement>, Self::Error>>;
+
+    /// Publish a new announcement.
+    fn create_announcement(
+        &self,
+        draft: AnnouncementDraft,
+    ) -> impl Future<Output = Result<Announcement, Self::Error>>;
+
+    /// Replace an announcement's fields.
+    fn update_announcement(
+        &self,
+        id: &str,
+        draft: AnnouncementDraft,
+    ) -> impl Future<Output = Result<Announcement, Self::Error>>;
+
+    /// Withdraw an announcement.
+    fn delete_announcement(&self, id: &str) -> impl Future<Output = Result<(), Self::Error>>;
+
     /// Domains allowed through a general block.
     fn domain_allows(
         &self,

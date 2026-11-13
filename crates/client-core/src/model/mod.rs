@@ -16,8 +16,8 @@ mod settings;
 mod stream;
 
 pub use admin::{
-    AdminAccount, AdminMeasure, DomainAllow, DomainBlock, DomainSeverity, MeasurePoint,
-    ModerationAction, Report, ReportState,
+    AdminAccount, AdminMeasure, AnnouncementDraft, AuditEntry, DomainAllow, DomainBlock,
+    DomainSeverity, MeasurePoint, ModerationAction, Report, ReportState,
 };
 pub use filter::{Filter, FilterAction, FilterContext, FilterDraft, FilterKeyword, Verdict, judge};
 pub use highlights::{FeaturedTag, Rule};

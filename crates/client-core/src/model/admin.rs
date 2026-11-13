@@ -237,6 +237,62 @@ mod tests {
     }
 }
 
+/// One recorded administrative action.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AuditEntry {
+    /// Row id.
+    pub id: String,
+    /// Account that performed it, when the row has one.
+    #[serde(default)]
+    pub actor_id: Option<String>,
+    /// Action name, e.g. `resolve_report`.
+    pub action: String,
+    /// Object type, e.g. `report` or `account`.
+    pub target_type: String,
+    /// Object id, when there is one.
+    #[serde(default)]
+    pub target_id: Option<String>,
+    /// Extra recorded fields.
+    #[serde(default)]
+    pub detail: serde_json::Value,
+    /// When it happened.
+    #[serde(default)]
+    pub created_at: String,
+}
+
+/// The fields staff can set on an announcement.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AnnouncementDraft {
+    /// Message body.
+    pub content: String,
+    /// Whether readers should see it now.
+    #[serde(default)]
+    pub published: bool,
+    /// Whether the dates cover whole days.
+    #[serde(default)]
+    pub all_day: bool,
+    /// Optional start timestamp.
+    #[serde(default)]
+    pub starts_at: Option<String>,
+    /// Optional end timestamp.
+    #[serde(default)]
+    pub ends_at: Option<String>,
+}
+
+impl AnnouncementDraft {
+    /// A draft with just a message.
+    #[must_use]
+    pub fn new(content: impl Into<String>) -> Self {
+        Self {
+            content: content.into(),
+            published: true,
+            all_day: false,
+            starts_at: None,
+            ends_at: None,
+        }
+    }
+}
+
 /// One line of the admin dashboard: a count per day, with the previous period beside it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AdminMeasure {

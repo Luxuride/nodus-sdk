@@ -601,6 +601,7 @@ dependencies = [
 name = "nodus-client-sdk"
 version = "0.1.0"
 dependencies = [
+ "gloo-net",
  "nodus-client-core",
  "nodus-discovery",
  "nodus-mastodon",

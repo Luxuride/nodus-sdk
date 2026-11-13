@@ -84,6 +84,16 @@ pub struct Endpoints {
 }
 
 impl Protocol {
+    /// A human-readable name for settings screens.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Nodus => "Nodus",
+            Self::Misskey => "Misskey",
+            Self::Mastodon => "Mastodon",
+        }
+    }
+
     /// The paths and token style for this protocol.
     #[must_use]
     pub const fn endpoints(self) -> Endpoints {
@@ -128,6 +138,72 @@ pub async fn detect(base: &str) -> Option<Protocol> {
         misskey: misskey.as_ref(),
     }
     .detect()
+}
+
+/// Fetches the same three documents from the browser. A failed request is absence, not
+/// an error, for the same reason as the native probe.
+#[cfg(target_arch = "wasm32")]
+pub async fn detect(base: &str) -> Option<Protocol> {
+    let base = base.trim_end_matches('/');
+    let nodus = fetch_wasm(&format!("{base}/api/v1/nodus/capabilities")).await;
+    let misskey = fetch_wasm(&format!("{base}/api/meta")).await;
+    let mastodon = fetch_wasm(&format!("{base}/api/v2/instance")).await;
+    Probe {
+        nodus: nodus.as_ref(),
+        mastodon: mastodon.as_ref(),
+        misskey: misskey.as_ref(),
+    }
+    .detect()
+}
+
+/// The Nodus capability names this server advertises.
+#[cfg(feature = "native")]
+pub async fn capabilities(base: &str) -> Vec<String> {
+    let base = base.trim_end_matches('/');
+    let Ok(client) = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+    else {
+        return Vec::new();
+    };
+    fetch(&client, &format!("{base}/api/v1/nodus/capabilities"))
+        .await
+        .map(|value| feature_names(&value))
+        .unwrap_or_default()
+}
+
+/// The Nodus capability names this server advertises, from the browser.
+#[cfg(target_arch = "wasm32")]
+pub async fn capabilities(base: &str) -> Vec<String> {
+    let base = base.trim_end_matches('/');
+    fetch_wasm(&format!("{base}/api/v1/nodus/capabilities"))
+        .await
+        .map(|value| feature_names(&value))
+        .unwrap_or_default()
+}
+
+#[cfg(any(feature = "native", target_arch = "wasm32"))]
+fn feature_names(value: &Value) -> Vec<String> {
+    value
+        .get("features")
+        .and_then(Value::as_array)
+        .map(|features| {
+            features
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+#[cfg(target_arch = "wasm32")]
+async fn fetch_wasm(url: &str) -> Option<Value> {
+    let response = gloo_net::http::Request::get(url).send().await.ok()?;
+    if !response.ok() {
+        return None;
+    }
+    response.json().await.ok()
 }
 
 #[cfg(feature = "native")]
