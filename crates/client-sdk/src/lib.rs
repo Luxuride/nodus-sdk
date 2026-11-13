@@ -36,6 +36,12 @@ pub use nodus_state::{
 pub mod protocol;
 pub use protocol::{Endpoints, Probe, Protocol};
 
+/// The Nodus-native performance surface.
+#[cfg(feature = "native")]
+pub mod nodus;
+#[cfg(feature = "native")]
+pub use nodus::{Capabilities, NodusClient, SyncDiff};
+
 /// Mastodon's API, mapped onto the shared client model.
 #[cfg(feature = "mastodon")]
 pub use nodus_mastodon as mastodon;

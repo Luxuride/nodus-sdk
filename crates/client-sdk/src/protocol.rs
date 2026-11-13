@@ -63,10 +63,7 @@ pub fn is_nodus(value: &Value) -> bool {
         .get("contract")
         .and_then(Value::as_str)
         .is_some_and(|contract| !contract.trim().is_empty())
-        && value
-            .get("features")
-            .and_then(Value::as_array)
-            .is_some()
+        && value.get("features").and_then(Value::as_array).is_some()
 }
 
 /// Whether a document is Misskey's `/api/meta`.
