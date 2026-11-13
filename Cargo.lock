@@ -608,6 +608,7 @@ dependencies = [
  "nodus-persist",
  "nodus-runtime",
  "nodus-state",
+ "reqwest",
  "serde_json",
 ]
 

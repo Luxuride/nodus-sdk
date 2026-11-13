@@ -110,6 +110,38 @@ impl Protocol {
     }
 }
 
+/// Fetches the three capability documents from `base` and returns the protocol to use.
+///
+/// A failed request is evidence of absence, not an error: an instance that does not
+/// answer `/api/meta` is still a Mastodon instance if `/api/v2/instance` answered.
+#[cfg(feature = "native")]
+pub async fn detect(base: &str) -> Option<Protocol> {
+    let base = base.trim_end_matches('/');
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .user_agent(concat!("nodus-client-sdk/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .ok()?;
+    let nodus = fetch(&client, &format!("{base}/api/v1/nodus/capabilities")).await;
+    let misskey = fetch(&client, &format!("{base}/api/meta")).await;
+    let mastodon = fetch(&client, &format!("{base}/api/v2/instance")).await;
+    Probe {
+        nodus: nodus.as_ref(),
+        mastodon: mastodon.as_ref(),
+        misskey: misskey.as_ref(),
+    }
+    .detect()
+}
+
+#[cfg(feature = "native")]
+async fn fetch(client: &reqwest::Client, url: &str) -> Option<Value> {
+    let response = client.get(url).send().await.ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    response.json().await.ok()
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
