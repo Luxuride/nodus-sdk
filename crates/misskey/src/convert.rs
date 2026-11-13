@@ -103,6 +103,7 @@ pub fn status(value: Value) -> Option<Status> {
         url: value.get("url").and_then(Value::as_str).map(str::to_owned),
         sensitive: files.iter().any(|media| media.description.is_some()),
         spoiler_text: cw.to_owned(),
+        language: None,
         media_attachments: files,
         mentions: Vec::<Mention>::new(),
         tags: tags(text),
@@ -225,6 +226,12 @@ fn media(value: &Value) -> Option<MediaAttachment> {
             .and_then(|properties| properties.get("height"))
             .and_then(Value::as_u64)
             .map(|height| height as u32),
+        sensitive: value
+            .get("sensitive")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        processing_state: None,
+        processing_progress: None,
     })
 }
 

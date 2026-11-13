@@ -113,6 +113,16 @@ pub trait MediaActions {
         id: &str,
         description: &str,
     ) -> impl Future<Output = Result<MediaAttachment, Self::Error>>;
+
+    /// Marks one attachment as sensitive without rewriting its description.
+    fn set_media_sensitive(
+        &self,
+        id: &str,
+        sensitive: bool,
+    ) -> impl Future<Output = Result<MediaAttachment, Self::Error>>;
+
+    /// Reads the processing state of one attachment.
+    fn media_status(&self, id: &str) -> impl Future<Output = Result<MediaAttachment, Self::Error>>;
 }
 
 pub trait AccountActions {

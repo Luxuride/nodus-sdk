@@ -281,6 +281,18 @@ impl<T: Transport> MediaActions for RestInstance<T> {
         let request = self.put_form(url, &form);
         self.fetch(request).await
     }
+
+    async fn set_media_sensitive(&self, id: &str, sensitive: bool) -> Result<MediaAttachment> {
+        let url = self.url(&format!("/api/v1/media/{id}"))?;
+        let form = [("sensitive", sensitive.to_string())];
+        let request = self.put_form(url, &form);
+        self.fetch(request).await
+    }
+
+    async fn media_status(&self, id: &str) -> Result<MediaAttachment> {
+        let url = self.url(&format!("/api/v1/media/{id}"))?;
+        self.fetch(self.get(url)).await
+    }
 }
 
 impl<T: Transport> Browse for RestInstance<T> {

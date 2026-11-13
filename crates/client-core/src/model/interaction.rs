@@ -102,6 +102,15 @@ pub struct Media {
     /// Height in pixels, when reported.
     #[serde(default)]
     pub meta_height: Option<u32>,
+    /// Whether the author marked this attachment as sensitive.
+    #[serde(default)]
+    pub sensitive: bool,
+    /// Server-side processing state: `pending`, `processing`, `ready`, `failed`.
+    #[serde(default)]
+    pub processing_state: Option<String>,
+    /// Processing progress from 0 to 100.
+    #[serde(default)]
+    pub processing_progress: Option<u8>,
 }
 
 /// Mastodon's name for [`Media`].

@@ -209,6 +209,9 @@ pub struct Post {
     /// Content warning, plain text.
     #[serde(default)]
     pub spoiler_text: String,
+    /// The language the post is written in, when the instance declares one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
     /// Source language of the body, when the instance declares one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content_format: Option<String>,
