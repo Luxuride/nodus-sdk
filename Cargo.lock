@@ -609,7 +609,9 @@ dependencies = [
  "nodus-runtime",
  "nodus-state",
  "reqwest",
+ "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]
