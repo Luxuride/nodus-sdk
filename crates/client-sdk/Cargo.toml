@@ -23,6 +23,7 @@ nodus-runtime = { workspace = true }
 nodus-state = { workspace = true }
 nodus-misskey = { workspace = true, optional = true }
 nodus-mastodon = { workspace = true, optional = true }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true

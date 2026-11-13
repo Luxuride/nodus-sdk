@@ -15,9 +15,9 @@
 //!                     nodus-mastodon      nodus-misskey
 //! ```
 //!
-//! A consumer picks its transport explicitly: `nodus-mastodon` for a Mastodon
-//! API, `nodus-misskey` for Misskey, or a custom implementation of the core
-//! traits. The facade never selects one for you.
+//! [`Protocol`] and [`Probe`] turn the instance documents into a transport choice;
+//! the caller then picks `nodus-mastodon`, `nodus-misskey`, or the Nodus surface.
+//! Detection never replaces the compatibility fallback.
 
 pub use nodus_client_core as core;
 pub use nodus_client_core::InstanceApi;
@@ -31,6 +31,10 @@ pub use nodus_state::{
     MAX_EVENTS_PER_BATCH, PostFeedState, Session, StreamState, Subscription, Timeline, TimelineKey,
     TimelinePage, TimelineRequest,
 };
+
+/// Detect which client API an instance speaks before opening a transport.
+pub mod protocol;
+pub use protocol::{Endpoints, Probe, Protocol};
 
 /// Mastodon's API, mapped onto the shared client model.
 #[cfg(feature = "mastodon")]
