@@ -48,6 +48,9 @@ pub enum Error {
     /// The request could not be completed at the transport layer.
     #[error("transport error: {0}")]
     Transport(String),
+    /// The instance API does not expose this feature.
+    #[error("{0} is not supported by this instance API")]
+    Unsupported(&'static str),
 }
 
 /// Result alias used by every operation in this crate.
